@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=VulkanOS Session Setup
+Exec=/usr/local/bin/vulkanos-session-start
+OnlyShowIn=XFCE;
+X-GNOME-Autostart-enabled=true
