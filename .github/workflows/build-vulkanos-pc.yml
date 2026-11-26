@@ -1,0 +1,51 @@
+name: Build VulkanOS PC Alpha
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pc-edition/**"
+      - ".github/workflows/build-vulkanos-pc.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Check out VulkanOS sources
+        uses: actions/checkout@v4
+
+      - name: Build Debian Live ISO in a clean Trixie container
+        run: |
+          docker run --privileged --rm \
+            --volume "$GITHUB_WORKSPACE/pc-edition:/work" \
+            --workdir /work \
+            debian:trixie-slim \
+            bash -lc '
+              set -eux
+              apt-get update
+              apt-get install -y --no-install-recommends \
+                bash ca-certificates curl python3 \
+                live-build debootstrap \
+                xorriso squashfs-tools \
+                syslinux-common syslinux-utils isolinux \
+                grub-pc-bin grub-efi-amd64-bin grub-efi-ia32-bin \
+                dosfstools mtools e2fsprogs \
+                xz-utils bzip2 rsync file gnupg
+              bash ./build.sh
+            '
+
+      - name: Upload ISO and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: VulkanOS-PC-Alpha-0.1-amd64
+          path: |
+            pc-edition/VulkanOS-PC-Alpha-0.1-amd64.iso
+            pc-edition/SHA256SUMS
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
