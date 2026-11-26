@@ -1,0 +1,66 @@
+# Lightweight desktop
+xfce4
+xfce4-terminal
+xfce4-whiskermenu-plugin
+lightdm
+lightdm-gtk-greeter
+xorg
+xserver-xorg-video-all
+dbus-x11
+thunar
+thunar-volman
+file-roller
+network-manager
+network-manager-gnome
+bluez
+blueman
+udisks2
+gvfs
+gvfs-backends
+pipewire-audio
+wireplumber
+pavucontrol
+xfce4-power-manager
+xfce4-screenshooter
+arc-theme
+papirus-icon-theme
+# Browser and basic utilities
+firefox-esr
+firefox-esr-l10n-pt-br
+curl
+ca-certificates
+python3
+zenity
+xdg-utils
+desktop-file-utils
+# Graphics and firmware
+mesa-vulkan-drivers
+libvulkan1
+vulkan-tools
+mesa-utils
+firmware-linux
+firmware-linux-nonfree
+firmware-misc-nonfree
+firmware-iwlwifi
+firmware-realtek
+firmware-amd-graphics
+firmware-intel-graphics
+# Gaming and input
+retroarch
+retroarch-assets
+libretro-snes9x
+libretro-genesisplusgx
+libretro-mgba
+libretro-gambatte
+libretro-nestopia
+steam-devices
+antimicro
+jstest-gtk
+evtest
+gamemode
+mangohud
+# Storage support
+ntfs-3g
+exfatprogs
+dosfstools
+e2fsprogs
