@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+# Pre-create a familiar console-style folder layout for the live user
+# and for every user created from /etc/skel during installation.
+install -d -m 0755 \
+  /etc/skel/Desktop \
+  /etc/skel/Games/Downloads \
+  /etc/skel/Apps \
+  /etc/skel/Themes \
+  /etc/skel/ROMs/nes \
+  /etc/skel/ROMs/snes \
+  /etc/skel/ROMs/gb \
+  /etc/skel/ROMs/gbc \
+  /etc/skel/ROMs/gba \
+  /etc/skel/ROMs/megadrive
+
+chmod 0755 /usr/local/bin/vulkanos-session-start
+chmod +x /etc/skel/Desktop/*.desktop 2>/dev/null || true
+chmod +x /etc/skel/.config/autostart/*.desktop 2>/dev/null || true
