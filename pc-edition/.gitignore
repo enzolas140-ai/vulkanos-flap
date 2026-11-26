@@ -1,0 +1,15 @@
+# live-build generated files
+auto/
+.cache/
+config/binary
+config/bootstrap
+config/chroot
+config/common
+config/source
+chroot/
+binary/
+*.iso
+*.hybrid.iso
+*.img
+*.squashfs
+SHA256SUMS
