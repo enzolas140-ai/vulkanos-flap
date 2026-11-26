@@ -1,0 +1,31 @@
+#!/bin/sh
+set -eu
+export DEBIAN_FRONTEND=noninteractive
+
+# Fetch the latest official Linux amd64 .deb from Hydra's GitHub Releases.
+python3 - <<'PY'
+import json
+import urllib.request
+
+api = "https://api.github.com/repos/hydralauncher/hydra/releases/latest"
+request = urllib.request.Request(api, headers={
+    "Accept": "application/vnd.github+json",
+    "User-Agent": "VulkanOS-PC-build"
+})
+with urllib.request.urlopen(request, timeout=45) as response:
+    release = json.load(response)
+
+assets = [a for a in release.get("assets", [])
+          if a.get("name", "").endswith("_amd64.deb")]
+if not assets:
+    raise SystemExit("Hydra release has no amd64 .deb asset")
+
+asset = assets[0]
+print("Installing Hydra", release.get("tag_name"), asset["name"])
+urllib.request.urlretrieve(asset["browser_download_url"], "/tmp/hydra-launcher.deb")
+PY
+
+apt-get update
+apt-get install -y --no-install-recommends /tmp/hydra-launcher.deb
+rm -f /tmp/hydra-launcher.deb
+rm -rf /var/lib/apt/lists/*
