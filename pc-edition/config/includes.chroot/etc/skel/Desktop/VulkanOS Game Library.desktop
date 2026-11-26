@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=VulkanOS Game Library
+Comment=Browse and launch your ROM collection
+Exec=/usr/local/bin/vulkanos-library
+Icon=applications-games
+Terminal=false
+Categories=Game;Emulator;
