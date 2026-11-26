@@ -1,0 +1,28 @@
+#!/bin/sh
+set -eu
+
+install -d -m 0755 /opt/vulkanos
+curl -fL --retry 4 --retry-delay 2 \
+  "https://packages.es-de.org/release/3.5.0/ES-DE_x64.AppImage" \
+  -o /opt/vulkanos/ES-DE.AppImage
+chmod 0755 /opt/vulkanos/ES-DE.AppImage
+
+cat > /usr/local/bin/vulkanos-library <<'EOF'
+#!/bin/sh
+export APPIMAGE_EXTRACT_AND_RUN=1
+exec /opt/vulkanos/ES-DE.AppImage "$@"
+EOF
+chmod 0755 /usr/local/bin/vulkanos-library
+
+cat > /usr/share/applications/vulkanos-library.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=VulkanOS Game Library
+Comment=Browse and launch games from ~/ROMs
+Exec=/usr/local/bin/vulkanos-library
+Icon=applications-games
+Terminal=false
+Categories=Game;Emulator;
+EOF
+
+chmod +x /etc/skel/Desktop/*.desktop 2>/dev/null || true
