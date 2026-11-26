@@ -1,0 +1,11 @@
+#!/bin/sh
+# Apply VulkanOS visual defaults once XFCE has created its desktop properties.
+WALL="/usr/share/backgrounds/vulkanos/vulkanos-wallpaper.svg"
+if command -v xfconf-query >/dev/null 2>&1; then
+  xfconf-query -c xsettings -p /Net/ThemeName --create -t string -s "Arc-Dark" 2>/dev/null || true
+  xfconf-query -c xsettings -p /Net/IconThemeName --create -t string -s "Papirus-Dark" 2>/dev/null || true
+  for property in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep '/last-image$' || true); do
+    xfconf-query -c xfce4-desktop -p "$property" -s "$WALL" 2>/dev/null || true
+  done
+fi
+mkdir -p "$HOME/Games/Downloads" "$HOME/Apps" "$HOME/Themes" "$HOME/ROMs"
