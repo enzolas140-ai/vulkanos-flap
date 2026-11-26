@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Steam
+Comment=PC gaming platform
+Exec=steam
+Icon=steam
+Terminal=false
+Categories=Game;
