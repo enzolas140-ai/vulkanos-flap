@@ -1,0 +1,87 @@
+name: Publish VulkanOS PC Dashboard Alpha release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-vulkanos-dashboard-release.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download verified dashboard ISO build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: VulkanOS-PC-Alpha-0.1-amd64
+          path: release-assets
+          run-id: 45919988737
+          github-token: ${{ github.token }}
+
+      - name: Verify ISO and prepare release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          ISO="release-assets/VulkanOS-PC-Alpha-0.1-amd64.iso"
+          test -s "$ISO"
+          test -s release-assets/SHA256SUMS
+          test -s release-assets/dashboard-preview.png
+          (cd release-assets && sha256sum -c SHA256SUMS)
+          cp LICENSE-ALPHA-0.1.txt release-assets/LICENSE-VULKANOS-ALPHA.txt
+          SIZE=$(stat -c %s "$ISO")
+          if (( SIZE > 1800000000 )); then
+            split -b 1800M -d -a 2 "$ISO" "$ISO.part-"
+            rm "$ISO"
+            cat > release-assets/REASSEMBLE.txt <<'EOF'
+VulkanOS PC Dashboard Alpha — reconstruir a ISO
+
+Windows CMD:
+copy /b VulkanOS-PC-Alpha-0.1-amd64.iso.part-00+VulkanOS-PC-Alpha-0.1-amd64.iso.part-01 VulkanOS-PC-Alpha-0.1-amd64.iso
+
+Linux:
+cat VulkanOS-PC-Alpha-0.1-amd64.iso.part-00 VulkanOS-PC-Alpha-0.1-amd64.iso.part-01 > VulkanOS-PC-Alpha-0.1-amd64.iso
+
+Depois confira SHA256SUMS. No Windows:
+certutil -hashfile VulkanOS-PC-Alpha-0.1-amd64.iso SHA256
+EOF
+          fi
+          ls -lh release-assets
+      - name: Publish dashboard ISO as a proper GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v0.2.0-alpha.1"
+          cat > RELEASE-NOTES.md <<'EOF'
+# VulkanOS PC Alpha 0.2 — Dashboard Edition
+
+Esta é a nova build experimental do VulkanOS PC com a interface própria estilo console. Ela substitui a tela inicial XFCE padrão por um dashboard VulkanOS escuro em vermelho e preto.
+
+## Interface incluída
+- Dashboard experimental com Biblioteca, Emuladores, Navegador, Steam, Configurações e Sobre.
+- Indicadores de rede, controles, Bluetooth e bateria.
+- Cartões para Steam, RetroArch, ES-DE, Hydra Launcher e Firefox.
+- Lista básica de jogos Steam instalados e ROMs encontradas em ~/ROMs.
+- Navegação básica por teclado e joysticks Linux (/dev/input/js*).
+- ES-DE permanece como frontend de emulação e é aberto pelo dashboard.
+
+## Base e limitações
+Ainda é um sistema baseado em Debian 13 (Trixie) com XFCE e componentes de jogos. O dashboard é experimental e não foi validado em hardware físico nesta publicação. O suporte a controles não é universal. Assistente BOOT/VKROMS, RUNVK, kernel/drivers próprios e ports específicos ainda não existem. PC amd64 apenas; não é para handhelds ARM.
+
+## Download e verificação
+Baixe as duas partes ISO anexadas, una-as conforme REASSEMBLE.txt e confira o SHA-256 da ISO reconstruída com SHA256SUMS. O screenshot dashboard-preview.png mostra a prévia gerada automaticamente no teste virtual 1280x720; não é uma foto de execução em hardware físico.
+
+Teste primeiro em modo Live usando um pendrive separado. Gravar ou instalar a ISO pode apagar dados. Faça backup e confira o dispositivo selecionado. Nenhuma ROM, BIOS ou jogo está incluído.
+
+## Licença
+Os materiais originais VulkanOS estão sujeitos à licença personalizada de avaliação e compartilhamento incluída como LICENSE-VULKANOS-ALPHA.txt. Componentes de terceiros continuam sujeitos às respectivas licenças. Esta licença não é open source.
+EOF
+          gh release create "$TAG" release-assets/* --repo "$GITHUB_REPOSITORY" --title "VulkanOS PC Alpha 0.2 — Dashboard Edition" --notes-file RELEASE-NOTES.md --prerelease
