@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c0c10">
+<title>Player • VulkanGames</title>
+<style>
+:root{color-scheme:dark;--bg:#0c0c10;--panel:#17161d;--line:#34303a;--text:#f7f3f6;--muted:#b7afba;--orange:#ff9b52;--red:#f04c3e}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 75% -15%,#44202b 0,transparent 45%),var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}a{color:inherit;text-decoration:none}.wrap{width:min(1050px,calc(100% - 30px));margin:auto}
+header{height:68px;border-bottom:1px solid #ffffff14}.nav{height:100%;display:flex;align-items:center;justify-content:space-between}.brand{font-size:18px;font-weight:950}.brand b{color:#ff8550}.nav a:last-child{font-size:12px;color:#ffb58d}
+main{padding:34px 0 60px}.eyebrow{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#ffb37b;font-weight:900}.title-row{display:flex;align-items:end;justify-content:space-between;gap:15px;flex-wrap:wrap}h1{font-size:clamp(28px,4vw,40px);letter-spacing:-1.5px;margin:8px 0 8px}.sub{font-size:13px;line-height:1.55;color:#b8afba;max-width:720px;margin:0}
+.panel{margin-top:22px;padding:20px;background:linear-gradient(145deg,#1b1921,#121117);border:1px solid #ffffff16;border-radius:18px}.controls{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:12px;align-items:end}.field label{display:block;font-size:11px;font-weight:800;color:#d8ced9;margin-bottom:7px}.field select,.field input[type=file]{width:100%;min-height:44px;background:#0e0d12;color:white;border:1px solid #39333f;border-radius:10px;padding:10px;font-size:12px}.field input[type=file]{padding:8px}
+.btn{border:0;border-radius:10px;background:linear-gradient(110deg,#ff9b4e,#ef4c40);color:#1a100e;padding:13px 17px;font-size:11px;font-weight:950;cursor:pointer}.btn:disabled{opacity:.5;cursor:not-allowed}.helper{font-size:11px;line-height:1.55;color:#a9a1ac;margin:13px 0 0}.helper b{color:#ffbd93}.status{font-size:11px;color:#ffb98e;margin-top:12px;min-height:17px}
+#screen{margin-top:18px;min-height:320px;max-height:75vh;overflow:auto;border-radius:13px;border:1px solid #ffffff18;background:#050507;display:none;padding:8px}#game{width:100%;min-height:300px}#game canvas{max-width:100%!important;max-height:70vh!important}.loading{display:none;padding:45px 15px;text-align:center;color:#cfc4d0;font-size:13px}
+.notice{margin-top:17px;padding:14px 16px;border-radius:12px;border:1px solid #493a39;background:#17141a;font-size:11px;color:#bbb1bd;line-height:1.6}.notice strong{color:white}
+@media(max-width:720px){.controls{grid-template-columns:1fr}.panel{padding:14px}#screen{min-height:250px}}
+</style>
+</head>
+<body>
+<header><div class="wrap nav"><a class="brand" href="index.html">🌋 VULKAN<b>GAMES</b></a><a href="emuladores.html">← Biblioteca de emuladores</a></div></header>
+<main class="wrap">
+<div class="title-row"><div><div class="eyebrow">VULKANGAMES PLAYER</div><h1 id="pageTitle">Abrir jogo</h1><p class="sub">Escolha o sistema e selecione uma ROM ou imagem de disco que você tem direito de utilizar. O arquivo é carregado localmente pelo navegador.</p></div></div>
+<section class="panel" id="setup">
+<div class="controls">
+<div class="field"><label for="system">Console</label><select id="system"><option value="gb">Game Boy</option><option value="gbc">Game Boy Color</option><option value="gba">Game Boy Advance</option><option value="psx">PlayStation 1</option></select></div>
+<div class="field"><label for="rom">Arquivo do jogo</label><input id="rom" type="file" accept=".gb,.gbc,.gba,.zip,.iso,.chd,.pbp,.cue,.bin"></div>
+<div class="field"><label for="bios">BIOS (opcional ou necessária para alguns consoles)</label><input id="bios" type="file" accept=".bin,.rom"></div>
+</div>
+<p class="helper" id="fileHelp"><b>GB/GBC:</b> escolha um arquivo .gb ou .gbc. A BIOS é opcional.</p>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:15px"><button class="btn" id="start">INICIAR JOGO ▶</button><a class="source" href="https://emulatorjs.org/docs/" target="_blank" rel="noopener" style="font-size:11px;color:#ffb58d;text-decoration:underline">Ajuda do emulador</a></div>
+<div class="status" id="status" role="status"></div>
+</section>
+<div class="loading" id="loading">Carregando o núcleo do emulador e o jogo…</div>
+<div id="screen"><div id="game"></div></div>
+<div class="notice"><strong>Arquivos e privacidade:</strong> o código passa os objetos de arquivo selecionados diretamente ao emulador no navegador; não há formulário de upload para o servidor VulkanGames. Para PlayStation, use imagem .CHD/.PBP/.ISO ou um .ZIP com os arquivos de disco relacionados; alguns jogos exigem uma BIOS regional compatível, que você deve fornecer a partir de uma fonte que tenha direito de usar. Não distribuímos BIOS. O emulador é fornecido pelo <a href="https://github.com/EmulatorJS/EmulatorJS" target="_blank" rel="noopener">projeto EmulatorJS</a> via CDN oficial.</div>
+</main>
+<script>
+(()=> {
+ const params=new URLSearchParams(location.search);
+ const system=document.getElementById("system"),romInput=document.getElementById("rom"),biosInput=document.getElementById("bios"),start=document.getElementById("start"),status=document.getElementById("status"),screen=document.getElementById("screen"),loading=document.getElementById("loading"),help=document.getElementById("fileHelp");
+ const allowed=["gb","gbc","gba","psx"];
+ const initial=allowed.includes(params.get("system"))?params.get("system"):"gb";
+ system.value=initial;
+ const labels={gb:"Game Boy",gbc:"Game Boy Color",gba:"Game Boy Advance",psx:"PlayStation 1"};
+ function update(){const s=system.value;document.getElementById("pageTitle").textContent=labels[s]+" • Player";if(s==="psx"){romInput.accept=".chd,.pbp,.iso,.zip";help.innerHTML="<b>PS1:</b> use .CHD, .PBP, .ISO ou .ZIP com os arquivos .CUE/.BIN juntos. Muitos jogos precisam de uma BIOS regional compatível."}else if(s==="gba"){romInput.accept=".gba,.zip";help.innerHTML="<b>GBA:</b> escolha .gba ou .zip. A BIOS de GBA é opcional."}else{romInput.accept=s==="gbc"?".gbc,.gb,.zip":".gb,.zip";help.innerHTML="<b>"+labels[s]+":</b> escolha .gb ou .gbc. A BIOS é opcional."}}
+ system.addEventListener("change",update);update();
+ async function launch(gameFile, biosFile, gameName, remoteUrl){
+   if(!gameFile&&!remoteUrl){status.textContent="Escolha um arquivo de jogo antes de iniciar.";return}
+   const requested=system.value;const core=requested==="gbc"?"gb":requested;
+   start.disabled=true;status.textContent="Preparando o emulador…";loading.style.display="block";screen.style.display="block";screen.innerHTML='<div id="game"></div>';
+   window.EJS_player="#game";
+   window.EJS_core=core;
+   window.EJS_gameUrl=remoteUrl||gameFile;
+   window.EJS_gameName=gameName||"VulkanGames Homebrew";
+   window.EJS_biosUrl=biosFile||"";
+   window.EJS_pathtodata="https://cdn.emulatorjs.org/stable/data/";
+   window.EJS_startOnLoaded=true;
+   window.EJS_volume=0.65;
+   window.EJS_askBeforeExit=false;
+   window.EJS_onGameStart=()=>{loading.style.display="none";status.textContent="Jogo carregado.";start.disabled=false};
+   window.EJS_onLoadError=(err)=>{loading.style.display="none";status.textContent="Não foi possível carregar o jogo. Confira o arquivo, a BIOS e o acesso ao CDN.";start.disabled=false};
+   const script=document.createElement("script");script.src="https://cdn.emulatorjs.org/stable/data/loader.js";
+   script.onload=()=>{loading.style.display="none";status.textContent="Se o jogo não iniciar, confira o formato e a BIOS necessários.";start.disabled=false};
+   script.onerror=()=>{loading.style.display="none";status.textContent="O CDN do emulador não pôde ser carregado nesta rede. Peça à escola a liberação do serviço oficial.";start.disabled=false};
+   document.body.appendChild(script);
+ }
+ start.addEventListener("click",()=>{const file=romInput.files[0],bios=biosInput.files[0];launch(file,bios,file?file.name:"",null)});
+ const remote=params.get("rom");
+ if(remote){const allowedHosts=["raw.githubusercontent.com"];try{const u=new URL(remote);if(!allowedHosts.includes(u.hostname))throw new Error("host");system.value=initial;update();launch(null,null,params.get("name")||"Homebrew",u.href)}catch(e){status.textContent="Este link de jogo não é permitido nesta página.";}}
+})();
+</script>
+</body></html>
