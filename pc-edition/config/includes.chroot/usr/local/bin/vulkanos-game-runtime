@@ -58,7 +58,8 @@ def read_json(path, default):
 
 def performance_settings():
     data = read_json(CONFIG_ROOT / "performance.json",{})
-    return {"profile":data.get("profile","balanced"),"gamemode":bool(data.get("gamemode",False)),"mangohud":bool(data.get("mangohud",False))}
+    profile=data.get("profile","balanced")
+    return {"profile":profile,"gamemode":bool(data.get("gamemode",False)) or profile=="performance","mangohud":bool(data.get("mangohud",False))}
 
 def configured_core(system):
     override = read_json(CONFIG_ROOT / "emulators.json",{}).get(system)
@@ -72,7 +73,7 @@ def scan_roms(root=None):
         if not path.is_file() or path.name.startswith(".") or path.suffix.lower() not in ROM_EXTENSIONS: continue
         system=system_from_path(path)
         if not system: continue
-        core=find_core(system)
+        core=configured_core(system)
         try: size=path.stat().st_size
         except OSError: size=0
         entries.append({"name":path.stem,"path":str(path),"system":system,"system_label":SYSTEMS[system]["label"],"core":str(core) if core else None,"ready":bool(core and shutil.which("retroarch")),"size_bytes":size})
@@ -83,6 +84,8 @@ def make_launch_command(rom,core=None,performance=None):
     if not rom.is_file(): raise FileNotFoundError(f"Arquivo de jogo não encontrado: {rom}")
     system=system_from_path(rom)
     if not system: raise ValueError("Sistema não identificado. Coloque o jogo na pasta correta dentro de ~/ROMs.")
+    allowed=SYSTEMS[system]["extensions"] | {".zip",".7z"}
+    if rom.suffix.lower() not in allowed: raise ValueError(f"Extensão {rom.suffix} não é compatível com {SYSTEMS[system]['label']}.")
     selected=find_core(system,core) if core else configured_core(system)
     if not selected: raise RuntimeError(f"Core para {SYSTEMS[system]['label']} não encontrado. Esperado: {', '.join(core_candidates(system))}")
     retroarch=shutil.which("retroarch")
@@ -95,7 +98,9 @@ def make_launch_command(rom,core=None,performance=None):
 
 def init_layout():
     for system in SYSTEMS: (ROM_ROOT/system).mkdir(parents=True,exist_ok=True)
-    (ROM_ROOT/"README.txt").write_text("VulkanOS ROM library\n\nCopy only game files you are legally allowed to use.\nSupported folders: nes, snes, gb, gbc, gba, megadrive.\nNo ROMs, BIOS files or copyrighted game content are included.\n",encoding="utf-8")
+    readme=ROM_ROOT/"README.txt"
+    if not readme.exists():
+        readme.write_text("VulkanOS ROM library\n\nCopy only game files you are legally allowed to use.\nSupported folders: nes, snes, gb, gbc, gba, megadrive.\nNo ROMs, BIOS files or copyrighted game content are included.\n",encoding="utf-8")
     return ROM_ROOT
 
 def main(argv=None):
