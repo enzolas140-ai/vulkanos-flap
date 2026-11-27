@@ -10,7 +10,8 @@ from pathlib import Path
 
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GLib
+gi.require_version("GdkPixbuf", "2.0")
+from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
 
 APP_NAME = "VulkanOS"
 HOME = Path.home()
@@ -105,6 +106,19 @@ def steam_games():
                 games[appid.group(1)] = name.group(1).strip()
     return sorted([(name, appid) for appid, name in games.items()], key=lambda item: item[0].lower())
 
+def steam_cover(appid):
+    roots = [
+        HOME / ".steam/steam/appcache/librarycache",
+        HOME / ".steam/root/appcache/librarycache",
+        HOME / ".local/share/Steam/appcache/librarycache",
+    ]
+    for suffix in ("_header.jpg", "_library_600x900.jpg", "_capsule_616x353.jpg", "_library_hero.jpg"):
+        for root in roots:
+            candidate = root / (str(appid) + suffix)
+            if candidate.is_file():
+                return candidate
+    return None
+
 def recent_roms(limit=6):
     extensions = {".nes", ".smc", ".sfc", ".gb", ".gbc", ".gba", ".gen", ".md", ".sms", ".gg", ".zip", ".7z"}
     found = []
@@ -155,6 +169,7 @@ class VulkanDashboard(Gtk.Window):
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_decorated(False)
         self.connect("key-press-event", self.on_key)
+        self.connect("destroy", lambda *_: Gtk.main_quit())
         self.page_buttons = {}
         self.page_names = {
             "library": "BIBLIOTECA",
@@ -270,7 +285,7 @@ class VulkanDashboard(Gtk.Window):
             sub.get_style_context().add_class("muted")
             page.pack_start(sub, False, False, 0)
 
-    def make_tile(self, title, subtitle, icon, callback, color="tile-red"):
+    def make_tile(self, title, subtitle, icon, callback, color="tile-red", image_path=None):
         button = Gtk.Button()
         button.set_size_request(205, 132)
         button.set_relief(Gtk.ReliefStyle.NONE)
@@ -279,8 +294,16 @@ class VulkanDashboard(Gtk.Window):
         context.add_class("tile")
         context.add_class(color)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
-        image = Gtk.Image.new_from_icon_name(icon, Gtk.IconSize.DIALOG)
-        image.set_pixel_size(38)
+        image = None
+        if image_path:
+            try:
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(image_path), 180, 74, True)
+                image = Gtk.Image.new_from_pixbuf(pixbuf)
+            except GLib.Error:
+                image = None
+        if image is None:
+            image = Gtk.Image.new_from_icon_name(icon, Gtk.IconSize.DIALOG)
+            image.set_pixel_size(38)
         image.get_style_context().add_class("tile-icon")
         label = Gtk.Label(label=title)
         label.set_xalign(0)
@@ -325,7 +348,7 @@ class VulkanDashboard(Gtk.Window):
             game_cards.append((
                 name, "Steam • instalado", "applications-games",
                 lambda appid=appid: run_process(["steam", "-applaunch", appid]),
-                colors[index % len(colors)]
+                colors[index % len(colors)], steam_cover(appid)
             ))
         if not game_cards:
             game_cards.append((
@@ -411,7 +434,7 @@ class VulkanDashboard(Gtk.Window):
         games = steam_games()
         game_cards = [
             (name, "Steam • instalado", "applications-games",
-             lambda appid=appid: run_process(["steam", "-applaunch", appid]), "tile-purple")
+             lambda appid=appid: run_process(["steam", "-applaunch", appid]), "tile-purple", steam_cover(appid))
             for name, appid in games[:12]
         ]
         self.add_section(page, "JOGOS INSTALADOS", game_cards,
@@ -425,7 +448,7 @@ class VulkanDashboard(Gtk.Window):
             ("SISTEMA", "Configurações do XFCE", "preferences-system",
              lambda: run_process(["xfce4-settings-manager"]), "tile-red"),
             ("CONTROLES", "Mapeamento manual", "input-gaming",
-             lambda: run_process(["antimicrox"]), "tile-purple"),
+             lambda: run_process(["antimicro"]), "tile-purple"),
             ("BLUETOOTH", "Parear dispositivos", "bluetooth",
              lambda: run_process(["blueman-manager"]), "tile-blue"),
             ("ÁUDIO", "Volume e dispositivos", "audio-volume-high",
