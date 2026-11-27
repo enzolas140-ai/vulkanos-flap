@@ -2,30 +2,22 @@
 set -eu
 export DEBIAN_FRONTEND=noninteractive
 
-# Fetch the latest official Linux amd64 .deb from Hydra's GitHub Releases.
-python3 - <<'PY'
-import json
-import urllib.request
+# Pin the verified official Linux amd64 release asset.
+# This avoids depending on the unauthenticated GitHub Releases API,
+# which can be rate-limited on shared CI runners.
+HYDRA_VERSION="4.4.1"
+HYDRA_DEB="/tmp/hydralauncher_"$HYDRA_VERSION"_amd64.deb"
+HYDRA_URL="https://github.com/hydralauncher/hydra/releases/download/v$HYDRA_VERSION/$(basename "$HYDRA_DEB")"
+HYDRA_SHA256="0527fe3fec945b3463f14d7b61a6ff12f76215b9e5d3ba338a677d0c20c92cb8"
 
-api = "https://api.github.com/repos/hydralauncher/hydra/releases/latest"
-request = urllib.request.Request(api, headers={
-    "Accept": "application/vnd.github+json",
-    "User-Agent": "VulkanOS-PC-build"
-})
-with urllib.request.urlopen(request, timeout=45) as response:
-    release = json.load(response)
+curl -fL --retry 4 --retry-delay 2 --connect-timeout 30 \
+  "$HYDRA_URL" -o "$HYDRA_DEB"
 
-assets = [a for a in release.get("assets", [])
-          if a.get("name", "").endswith("_amd64.deb")]
-if not assets:
-    raise SystemExit("Hydra release has no amd64 .deb asset")
-
-asset = assets[0]
-print("Installing Hydra", release.get("tag_name"), asset["name"])
-urllib.request.urlretrieve(asset["browser_download_url"], "/tmp/hydra-launcher.deb")
-PY
+echo "$HYDRA_SHA256  $HYDRA_DEB" | sha256sum --check -
 
 apt-get update
-apt-get install -y --no-install-recommends /tmp/hydra-launcher.deb
-rm -f /tmp/hydra-launcher.deb
+apt-get install -y --no-install-recommends "$HYDRA_DEB"
+rm -f "$HYDRA_DEB"
 rm -rf /var/lib/apt/lists/*
+
+[executed on device: SnyX-PC (cde0589c-0418-41c7-a0c5-371e66fb4eb6)]
