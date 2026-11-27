@@ -1,4 +1,4 @@
-# Lightweight desktop
+# Lightweight desktop shell and session
 xfce4
 xfce4-terminal
 xfce4-whiskermenu-plugin
@@ -24,6 +24,9 @@ xfce4-power-manager
 xfce4-screenshooter
 arc-theme
 papirus-icon-theme
+# VulkanOS boot animation
+plymouth
+plymouth-themes
 # Browser and basic utilities
 firefox-esr
 firefox-esr-l10n-pt-br
@@ -49,7 +52,7 @@ firmware-iwlwifi
 firmware-realtek
 firmware-amd-graphics
 firmware-intel-graphics
-# Gaming and input
+# Gaming and controller/input support
 retroarch
 retroarch-assets
 libretro-snes9x

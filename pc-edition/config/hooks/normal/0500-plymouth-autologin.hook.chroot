@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+
+install -d -m 0755 /etc/plymouth
+cat > /etc/plymouth/plymouthd.conf <<'EOF'
+[Daemon]
+Theme=vulkanos
+ShowDelay=0
+EOF
+
+if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+  plymouth-set-default-theme -R vulkanos
+else
+  update-initramfs -u -k all
+fi
+
+# Live session goes straight to the VulkanOS dashboard without a password prompt.
+install -d -m 0755 /etc/lightdm/lightdm.conf.d
+cat > /etc/lightdm/lightdm.conf.d/50-vulkanos-autologin.conf <<'EOF'
+[Seat:*]
+autologin-user=vulkan
+autologin-user-timeout=0
+autologin-session=xfce
+user-session=xfce
+EOF

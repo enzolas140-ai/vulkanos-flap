@@ -1,44 +1,47 @@
-# VulkanOS PC Edition — Alpha 0.1
+# VulkanOS PC Edition — Alpha 0.3
 
-VulkanOS PC is a lightweight, x86-64 Debian 13 live system with XFCE and an experimental console-style dashboard.
+A edição PC do VulkanOS é um sistema Live x86-64 com visual próprio, menu de inicialização, animação de boot e dashboard em tela cheia.
 
-## Included
-- XFCE desktop, NetworkManager, Bluetooth and PipeWire audio
-- Experimental VulkanOS dashboard with a dark red/black console-style layout
-- Dashboard pages for Library, Emulators, Browser, Steam, Settings and About
-- Dashboard tiles for Steam, RetroArch, ES-DE, Hydra Launcher and Firefox ESR
-- Basic listing of installed Steam games and ROM files found under ~/ROMs
-- Basic system indicators for network, visible joystick devices, Bluetooth and battery
-- Firefox ESR
-- Steam installer and 32-bit Mesa/Vulkan runtime
-- RetroArch plus starter Libretro cores
-- ES-DE game library frontend (official Linux x64 AppImage)
-- Hydra Launcher (latest official Linux amd64 .deb at build time)
-- AntiMicroX for manual gamepad-to-keyboard/mouse mapping
+## Experiência de inicialização
 
-The dashboard opens automatically after the XFCE session starts. It does not replace ES-DE: the dashboard opens ES-DE for the emulation library. The footer shows the A/B/X/Y/START actions. Keyboard arrows, Enter and Escape are supported, together with basic button/axis navigation through Linux joystick devices (/dev/input/js*). This is not universal controller support; device compatibility still requires hardware testing, and AntiMicro provides manual mapping.
+1. Ligue o PC pelo pendrive VulkanOS.
+2. No menu de boot, escolha **INICIAR VULKANOS LIVE** ou uma das opções **Install** para abrir o instalador gráfico/texto.
+3. Ao iniciar o modo Live, o Plymouth mostra o símbolo branco do vulcão com uma pulsação e oscilação suaves.
+4. O sistema entra diretamente na sessão VulkanOS, sem tela de senha, e abre o dashboard fullscreen.
+
+A opção Live serve para experimentar o sistema sem instalar no disco. A opção de instalação inicia o instalador do Debian Live; confirme cuidadosamente o disco de destino porque a instalação pode apagar dados.
+
+## Interface e programas
+
+O dashboard traz as páginas Biblioteca, Emuladores, Navegador, Steam, Configurações e Sobre. A imagem inclui Firefox ESR, Steam, RetroArch e cores, ES-DE, Hydra Launcher, AntiMicro, Mesa/Vulkan, MangoHud, GameMode, Bluetooth, NetworkManager, PipeWire e ferramentas do sistema, conforme disponibilidade e compatibilidade dos pacotes.
+
+O dashboard abre os jogos e programas instalados. ES-DE continua sendo o frontend de emulação, e os jogos/ROMs devem ser adicionados pelo próprio usuário em `~/ROMs`. Nenhum jogo, ROM ou BIOS é distribuído.
+
+## Kernel e arquitetura
+
+Esta edição inclui um **kernel Linux x86-64 compilado pelo projeto**, distribuído como pacote Debian e com configuração VulkanOS para o ambiente Live (initramfs, SquashFS e OverlayFS) e drivers comuns de PC.
+
+O kernel é uma compilação personalizada do Linux; não é um kernel escrito do zero. O ArkOS4Clone é uma base voltada a hardware ARM de consoles portáteis e seu kernel não pode ser usado nesta edição PC. Os dois projetos precisam permanecer separados.
+
+O kernel personalizado não é assinado. Em computadores que exigem componentes de boot assinados, pode ser necessário desativar o Secure Boot no firmware.
+
+## Controles e periféricos
+
+Teclados e mouses USB/Bluetooth funcionam através da pilha normal de entrada Linux quando o hardware é reconhecido. Controles USB/Bluetooth que são reconhecidos pelo Linux podem ser usados nos aplicativos compatíveis. AntiMicro permite mapear manualmente botões e eixos para teclado/mouse; não é uma garantia de compatibilidade universal. O suporte real depende do controle, Bluetooth, driver e jogo.
 
 ## Build
-Run bash build.sh as root inside Debian 13 (Trixie) with the packages listed in the GitHub Actions workflow.
 
-The workflow checks shell/Python syntax, validates the SVG artwork, launches the dashboard in a virtual 1280×720 display, uploads a screenshot preview, and then builds the ISO-hybrid image. The ISO, checksum and dashboard preview are uploaded as a GitHub Actions artifact.
+A imagem é construída em Debian 13 Trixie com live-build. O workflow GitHub Actions:
+- valida os scripts, o dashboard e os SVGs;
+- gera a arte do menu e o símbolo usado no Plymouth;
+- compila o kernel x86-64 como pacote `.deb`;
+- constrói a ISO híbrida Live/Installer;
+- executa uma verificação de interface em display virtual e publica preview, SHA-256 e detalhes do kernel.
 
-## USB
-Write the ISO to a USB stick with Rufus. For Debian live images, choose DD mode when Rufus asks. Test the live session before installing. This is not a tested persistent USB installation.
+Para compilar manualmente, execute `bash build.sh` como root dentro de um ambiente Debian 13 Trixie com as dependências usadas pelo workflow. A compilação do kernel exige bastante CPU, memória e espaço em disco.
 
-## Game folders
-The live user starts with:
-- ~/ROMs/nes, ~/ROMs/snes, ~/ROMs/gb, ~/ROMs/gbc, ~/ROMs/gba, ~/ROMs/megadrive
-- ~/Games/Downloads, ~/Apps, ~/Themes
+## Estado
 
-ES-DE uses the standard ~/ROMs directory and scans supported game files automatically. Only add games you are legally entitled to use; no game files are bundled.
+**Alpha 0.3 — não estável.** A validação automatizada não substitui testes em hardware físico. Antes de chamar a versão de Release estável, ainda é necessário testar boot BIOS/UEFI, Live, instalação, vídeo, rede, áudio, Bluetooth, controles, suspensão e Steam em PCs reais.
 
-## Current Alpha limitations
-- Target is PC x86-64 (amd64), not ARM handhelds.
-- Dual-disk BOOT/VKROMS partition automation and the RUNVK storage wizard are not implemented. The current build does not repartition or format drives.
-- Universal controller navigation and automatic controller mapping are not implemented. AntiMicroX provides manual mapping.
-- The dashboard layout and hardware indicators have not yet been validated on a physical PC.
-- Steam completes its client setup on first launch and needs internet access.
-
-## Safety
-The installer must never be pointed at a disk containing data you want to keep. Back up important files before installing. The build process itself does not touch local disks or USB devices.
+A licença personalizada de avaliação do VulkanOS cobre apenas os materiais originais do projeto. Linux, Debian e os demais componentes de terceiros mantêm suas próprias licenças.

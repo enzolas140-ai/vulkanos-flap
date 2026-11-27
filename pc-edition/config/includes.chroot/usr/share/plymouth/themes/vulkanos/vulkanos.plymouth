@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=VulkanOS
+Description=VulkanOS white volcano mark
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/vulkanos
+ScriptFile=/usr/share/plymouth/themes/vulkanos/vulkanos.script

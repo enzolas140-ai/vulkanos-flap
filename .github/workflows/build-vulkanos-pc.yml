@@ -1,8 +1,8 @@
-name: Build VulkanOS PC Alpha
+name: Build VulkanOS PC Alpha 0.3
 
 on:
   push:
-    branches: [main]
+    branches: [main, pc-release-ui]
     paths:
       - "pc-edition/**"
       - ".github/workflows/build-vulkanos-pc.yml"
@@ -14,12 +14,12 @@ permissions:
 jobs:
   build-iso:
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: 360
     steps:
       - name: Check out VulkanOS sources
         uses: actions/checkout@v4
 
-      - name: Build Debian Live ISO in a clean Trixie container
+      - name: Build VulkanOS Live ISO in a clean Trixie container
         run: |
           docker run --privileged --rm \
             --volume "$GITHUB_WORKSPACE/pc-edition:/work" \
@@ -29,32 +29,147 @@ jobs:
               set -eux
               apt-get update
               apt-get install -y --no-install-recommends \
-                bash ca-certificates curl python3 python3-gi gir1.2-gtk-3.0 \
-                gir1.2-gdkpixbuf-2.0 librsvg2-common xvfb xauth \
+                bash ca-certificates curl python3 python3-gi python3-pil \
+                gir1.2-gtk-3.0 gir1.2-gdkpixbuf-2.0 \
+                librsvg2-common librsvg2-bin xvfb xauth \
                 live-build debootstrap \
                 xorriso squashfs-tools \
                 syslinux-common syslinux-utils isolinux \
                 grub-pc-bin grub-efi-amd64-bin grub-efi-ia32-bin \
                 dosfstools mtools e2fsprogs \
                 xz-utils bzip2 rsync file gnupg
-              bash -n ./build.sh ./config/hooks/normal/*.hook.chroot ./config/includes.chroot/usr/local/bin/vulkanos-session-start
+              bash -n ./build.sh ./kernel/build-kernel.sh ./config/hooks/normal/*.hook.chroot
               PYTHONPYCACHEPREFIX=/tmp/vulkanos-pycache python3 -m py_compile "$PWD/config/includes.chroot/usr/local/bin/vulkanos-dashboard"
-              python3 -c "import pathlib, xml.etree.ElementTree as ET; [ET.parse(p) for p in pathlib.Path(\"config/includes.chroot\").rglob(\"*.svg\")]; print(\"All VulkanOS SVG resources are valid\")"
+              python3 -c "import pathlib, xml.etree.ElementTree as ET; [ET.parse(p) for p in pathlib.Path(\".\").rglob(\"*.svg\")]; print(\"All VulkanOS SVG assets are valid\")"
               VULKANOS_RESOURCE_DIR="$PWD/config/includes.chroot/usr/share/backgrounds/vulkanos" \
               VULKANOS_SCREENSHOT_PATH="$PWD/dashboard-preview.png" \
                 xvfb-run -a -s "-screen 0 1280x720x24" /usr/bin/python3 "$PWD/config/includes.chroot/usr/local/bin/vulkanos-dashboard" --smoke-test
               test -s dashboard-preview.png
               bash ./build.sh
+              test -s VulkanOS-PC-Alpha-0.3-amd64.iso
+              (sha256sum -c SHA256SUMS)
+              test -s KERNEL-INFO.txt
+              test -s KERNEL-CONFIG
+              test -s KERNEL-SOURCE.tar.xz
             '
 
-      - name: Upload ISO and checksum
+      - name: Upload ISO, checksum, preview and kernel source details
         uses: actions/upload-artifact@v4
         with:
-          name: VulkanOS-PC-Alpha-0.1-amd64
+          name: VulkanOS-PC-Alpha-0.3-amd64
           path: |
-            pc-edition/VulkanOS-PC-Alpha-0.1-amd64.iso
+            pc-edition/VulkanOS-PC-Alpha-0.3-amd64.iso
             pc-edition/SHA256SUMS
+            pc-edition/KERNEL-INFO.txt
+            pc-edition/KERNEL-CONFIG
+            pc-edition/KERNEL-SOURCE.tar.xz
             pc-edition/dashboard-preview.png
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
+
+  publish-release:
+    name: Publish VulkanOS PC Alpha 0.3 download
+    needs: build-iso
+    if: github.ref_name == 'pc-release-ui'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Check out release notes and license
+        uses: actions/checkout@v4
+
+      - name: Download finished ISO artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: VulkanOS-PC-Alpha-0.3-amd64
+          path: release-assets
+
+      - name: Verify and split ISO for GitHub Releases
+        shell: bash
+        run: |
+          set -euo pipefail
+          ISO="release-assets/VulkanOS-PC-Alpha-0.3-amd64.iso"
+          test -s "$ISO"
+          (cd release-assets && sha256sum -c SHA256SUMS)
+          SIZE=$(stat -c %s "$ISO")
+          if (( SIZE > 1800000000 )); then
+            split -b 1800M -d -a 2 "$ISO" "$ISO.part-"
+            rm "$ISO"
+          fi
+          cat > release-assets/REASSEMBLE.txt <<'EOF'
+          VULKANOS PC ALPHA 0.3 — RECONSTRUIR ISO
+
+          Baixe TODAS as partes .iso.part-00, .iso.part-01 etc. para a mesma pasta.
+
+          Windows PowerShell:
+          Execute: .\REASSEMBLE.ps1
+
+          Linux:
+          cat VulkanOS-PC-Alpha-0.3-amd64.iso.part-* > VulkanOS-PC-Alpha-0.3-amd64.iso
+
+          Depois confira SHA256SUMS:
+          Linux: sha256sum -c SHA256SUMS
+          Windows PowerShell: Get-FileHash .\VulkanOS-PC-Alpha-0.3-amd64.iso -Algorithm SHA256
+          O hash calculado deve corresponder ao valor em SHA256SUMS.
+          EOF
+          cat > release-assets/REASSEMBLE.ps1 <<'EOF'
+          $ErrorActionPreference = "Stop"
+          $output = "VulkanOS-PC-Alpha-0.3-amd64.iso"
+          $parts = @(Get-ChildItem -File -Filter "VulkanOS-PC-Alpha-0.3-amd64.iso.part-*" | Sort-Object Name)
+          if ($parts.Count -eq 0) { throw "Nenhuma parte ISO encontrada." }
+          $stream = [System.IO.File]::Create($output)
+          try {
+            foreach ($part in $parts) {
+              $input = [System.IO.File]::OpenRead($part.FullName)
+              try { $input.CopyTo($stream) } finally { $input.Dispose() }
+            }
+          } finally { $stream.Dispose() }
+          Write-Host "ISO reconstruida: $output"
+          Write-Host "Agora valide o hash usando SHA256SUMS."
+          EOF
+          cp LICENSE-ALPHA-0.1.txt release-assets/LICENSE-VULKANOS-ALPHA.txt
+          ls -lh release-assets
+
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v0.3.0-alpha.${GITHUB_RUN_NUMBER}"
+          cat > RELEASE-NOTES.md <<'EOF'
+          # VulkanOS PC Alpha 0.3 — Volcano Boot Edition
+
+          Esta build experimental foi preparada para que o VulkanOS tenha uma experiência própria desde o início do boot.
+
+          ## Inicialização
+          - Menu de boot BIOS/UEFI com opção Live e opções de instalador gráfico/texto.
+          - Arte VulkanOS no menu de boot.
+          - Animação Plymouth: símbolo branco de vulcão pulsando e oscilando suavemente.
+          - Entrada direta no dashboard na sessão Live, sem solicitar senha.
+
+          ## Sistema
+          - Kernel Linux x86-64 compilado em pacote Debian com configuração VulkanOS.
+          - Dashboard fullscreen com Biblioteca, Emuladores, Navegador, Steam, Configurações e Sobre.
+          - Firefox ESR, Steam, RetroArch, ES-DE, Hydra Launcher, AntiMicro, Mesa/Vulkan, MangoHud e GameMode conforme disponibilidade dos pacotes.
+          - Suporte a teclado, mouse e controles reconhecidos pelo Linux; AntiMicro permite mapeamento manual.
+
+          ## Kernel e fontes
+          O kernel é uma compilação personalizada do Linux para PCs x86-64, não um kernel escrito do zero. O arquivo KERNEL-SOURCE.tar.xz e a configuração KERNEL-CONFIG acompanham o kernel para facilitar a reprodução e auditoria. O kernel não é assinado; Secure Boot pode precisar ser desativado.
+
+          ## Transparência e testes
+          Esta é uma Alpha, ainda não validada em variedade de PCs físicos. É necessário testar BIOS/UEFI, Live, instalação, vídeo, Wi-Fi, áudio, Bluetooth, controles, suspensão e Steam em hardware real. Controles não têm compatibilidade universal: depende do dispositivo, driver e jogo.
+
+          Teste primeiro em modo Live usando um pendrive separado. Instalar em disco pode apagar dados; faça backup e confira cuidadosamente o destino. Nenhuma ROM, BIOS ou jogo está incluído.
+
+          Baixe todas as partes, reconstrua a ISO conforme REASSEMBLE.txt e valide SHA256SUMS antes de gravar.
+
+          Os materiais originais VulkanOS estão sujeitos à licença personalizada incluída como LICENSE-VULKANOS-ALPHA.txt. Componentes de terceiros mantêm suas próprias licenças.
+          EOF
+          gh release create "$TAG" release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "VulkanOS PC Alpha 0.3 — Volcano Boot Edition" \
+            --notes-file RELEASE-NOTES.md \
+            --prerelease

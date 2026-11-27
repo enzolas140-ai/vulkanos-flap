@@ -1,0 +1,39 @@
+Window.SetBackgroundTopColor(0.015, 0.012, 0.018);
+Window.SetBackgroundBottomColor(0.045, 0.025, 0.030);
+
+logo_image = Image("vulkanos-volcano.png");
+screen_width = Window.GetWidth();
+screen_height = Window.GetHeight();
+
+# Keep the mark proportional on 480p, 720p and high-resolution displays.
+logo_scale = (screen_height * 0.32) / logo_image.GetHeight();
+scaled_logo = logo_image.Scale(logo_image.GetWidth() * logo_scale,
+                               logo_image.GetHeight() * logo_scale);
+
+logo_sprite = Sprite();
+logo_sprite.SetImage(scaled_logo);
+
+brand_image = Image.Text("VULKANOS", 1.0, 1.0, 1.0);
+brand_sprite = Sprite();
+brand_sprite.SetImage(brand_image);
+
+total_height = scaled_logo.GetHeight() + brand_image.GetHeight() + 28;
+base_y = (screen_height - total_height) / 2;
+logo_x = screen_width / 2 - scaled_logo.GetWidth() / 2;
+logo_y = base_y;
+brand_x = screen_width / 2 - brand_image.GetWidth() / 2;
+brand_y = logo_y + scaled_logo.GetHeight() + 28;
+
+logo_sprite.SetPosition(logo_x, logo_y, 100);
+brand_sprite.SetPosition(brand_x, brand_y, 100);
+
+phase = 0.0;
+fun refresh_callback() {
+    phase = phase + 0.018;
+    pulse = 0.62 + (Math.Cos(phase) + 1.0) * 0.18;
+    float_y = Math.Sin(phase) * 2.4;
+    logo_sprite.SetOpacity(pulse);
+    logo_sprite.SetY(logo_y + float_y);
+    brand_sprite.SetOpacity(0.82 + (Math.Cos(phase) + 1.0) * 0.08);
+}
+Plymouth.SetRefreshFunction(refresh_callback);
