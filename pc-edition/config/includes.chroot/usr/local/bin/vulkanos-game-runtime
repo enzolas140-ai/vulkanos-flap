@@ -1,0 +1,136 @@
+#!/usr/bin/python3
+"""VulkanOS Game Runtime: discover ROMs and launch Debian-installed RetroArch cores."""
+import argparse, json, os, shutil, sys
+from pathlib import Path
+
+ROM_ROOT = Path(os.environ.get("VULKANOS_ROM_ROOT", str(Path.home() / "ROMs"))).expanduser()
+CONFIG_ROOT = Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))) / "vulkanos"
+STATE_ROOT = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))) / "vulkanos"
+CORE_DIRS = (
+    Path("/usr/lib/x86_64-linux-gnu/libretro"), Path("/usr/lib/libretro"),
+    Path("/usr/lib/x86_64-linux-gnu/retroarch/cores"), Path("/usr/lib/retroarch/cores"),
+)
+SYSTEMS = {
+    "nes": {"label":"Nintendo Entertainment System","extensions":{".nes",".unf",".unif",".fds"},"cores":("nestopia_libretro.so","fceumm_libretro.so")},
+    "snes": {"label":"Super Nintendo","extensions":{".sfc",".smc",".swc"},"cores":("snes9x_libretro.so",)},
+    "gb": {"label":"Game Boy","extensions":{".gb"},"cores":("gambatte_libretro.so",)},
+    "gbc": {"label":"Game Boy Color","extensions":{".gbc"},"cores":("gambatte_libretro.so",)},
+    "gba": {"label":"Game Boy Advance","extensions":{".gba"},"cores":("mgba_libretro.so",)},
+    "megadrive": {"label":"Sega Mega Drive / Genesis","extensions":{".md",".gen",".smd",".32x",".bin"},"cores":("genesis_plus_gx_libretro.so",)},
+}
+ALIASES = {"genesis":"megadrive","mega-drive":"megadrive","md":"megadrive","gameboy":"gb","game-boy":"gb","gameboycolor":"gbc","game-boy-color":"gbc","gameboyadvance":"gba","game-boy-advance":"gba"}
+ROM_EXTENSIONS = set().union(*(s["extensions"] for s in SYSTEMS.values())) | {".zip",".7z"}
+
+def normalize_system(value):
+    value = value.strip().lower().replace("_","-").replace(" ","-")
+    return ALIASES.get(value,value)
+
+def system_from_path(path):
+    path = Path(path)
+    try:
+        relative = path.resolve().relative_to(ROM_ROOT.resolve())
+        if relative.parts:
+            candidate = normalize_system(relative.parts[0])
+            if candidate in SYSTEMS:
+                return candidate
+    except (OSError,ValueError):
+        pass
+    matches = [name for name,s in SYSTEMS.items() if path.suffix.lower() in s["extensions"]]
+    return matches[0] if len(matches)==1 else None
+
+def core_candidates(system):
+    return list(SYSTEMS.get(normalize_system(system),{}).get("cores",()))
+
+def find_core(system, override=None):
+    candidates = [override] if override else core_candidates(system)
+    for candidate in candidates:
+        if not candidate: continue
+        path = Path(candidate).expanduser()
+        if path.is_absolute() and path.is_file(): return path
+        for directory in CORE_DIRS:
+            located = directory / candidate
+            if located.is_file(): return located
+    return None
+
+def read_json(path, default):
+    try: return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError,ValueError,TypeError): return default
+
+def performance_settings():
+    data = read_json(CONFIG_ROOT / "performance.json",{})
+    return {"profile":data.get("profile","balanced"),"gamemode":bool(data.get("gamemode",False)),"mangohud":bool(data.get("mangohud",False))}
+
+def configured_core(system):
+    override = read_json(CONFIG_ROOT / "emulators.json",{}).get(system)
+    return find_core(system,override) if override else find_core(system)
+
+def scan_roms(root=None):
+    root=Path(root or ROM_ROOT).expanduser()
+    entries=[]
+    if not root.is_dir(): return entries
+    for path in sorted(root.rglob("*"),key=lambda p:str(p).lower()):
+        if not path.is_file() or path.name.startswith(".") or path.suffix.lower() not in ROM_EXTENSIONS: continue
+        system=system_from_path(path)
+        if not system: continue
+        core=find_core(system)
+        try: size=path.stat().st_size
+        except OSError: size=0
+        entries.append({"name":path.stem,"path":str(path),"system":system,"system_label":SYSTEMS[system]["label"],"core":str(core) if core else None,"ready":bool(core and shutil.which("retroarch")),"size_bytes":size})
+    return entries
+
+def make_launch_command(rom,core=None,performance=None):
+    rom=Path(rom).expanduser().resolve()
+    if not rom.is_file(): raise FileNotFoundError(f"Arquivo de jogo não encontrado: {rom}")
+    system=system_from_path(rom)
+    if not system: raise ValueError("Sistema não identificado. Coloque o jogo na pasta correta dentro de ~/ROMs.")
+    selected=find_core(system,core) if core else configured_core(system)
+    if not selected: raise RuntimeError(f"Core para {SYSTEMS[system]['label']} não encontrado. Esperado: {', '.join(core_candidates(system))}")
+    retroarch=shutil.which("retroarch")
+    if not retroarch: raise RuntimeError("RetroArch não está instalado.")
+    settings=performance or performance_settings()
+    command=[retroarch,"-L",str(selected),str(rom)]
+    if settings.get("mangohud") and shutil.which("mangohud"): command=[shutil.which("mangohud"),*command]
+    if settings.get("gamemode") and shutil.which("gamemoderun"): command=[shutil.which("gamemoderun"),*command]
+    return command
+
+def init_layout():
+    for system in SYSTEMS: (ROM_ROOT/system).mkdir(parents=True,exist_ok=True)
+    (ROM_ROOT/"README.txt").write_text("VulkanOS ROM library\n\nCopy only game files you are legally allowed to use.\nSupported folders: nes, snes, gb, gbc, gba, megadrive.\nNo ROMs, BIOS files or copyrighted game content are included.\n",encoding="utf-8")
+    return ROM_ROOT
+
+def main(argv=None):
+    parser=argparse.ArgumentParser(description="VulkanOS game library and emulator launcher")
+    sub=parser.add_subparsers(dest="action",required=True)
+    sub.add_parser("init")
+    scan=sub.add_parser("scan"); scan.add_argument("--json",action="store_true"); scan.add_argument("--root")
+    launch=sub.add_parser("launch"); launch.add_argument("rom"); launch.add_argument("--core")
+    sub.add_parser("systems"); sub.add_parser("self-test")
+    args=parser.parse_args(argv)
+    if args.action=="init": print(init_layout()); return 0
+    if args.action=="systems":
+        for key,s in SYSTEMS.items(): print(f"{key}: {s['label']} — cores: {', '.join(s['cores'])}")
+        return 0
+    if args.action=="scan":
+        entries=scan_roms(args.root)
+        if args.json: print(json.dumps(entries,ensure_ascii=False,indent=2))
+        else:
+            for item in entries: print(f"[{'PRONTO' if item['ready'] else 'CORE AUSENTE'}] {item['system'].upper()} — {item['name']} — {item['path']}")
+            print(f"\n{len(entries)} jogo(s) encontrado(s).")
+        return 0
+    if args.action=="launch":
+        try: command=make_launch_command(args.rom,args.core)
+        except (OSError,ValueError,RuntimeError) as error:
+            print(f"VulkanOS Game Runtime: {error}",file=sys.stderr); return 2
+        STATE_ROOT.mkdir(parents=True,exist_ok=True)
+        with (STATE_ROOT/"game-runtime.log").open("a",encoding="utf-8") as stream: stream.write("Launching: "+" ".join(command)+"\n")
+        os.execvpe(command[0],command,os.environ.copy())
+    if args.action=="self-test":
+        assert len(SYSTEMS)==6
+        expected={"nes":"demo.nes","snes":"demo.sfc","gb":"demo.gb","gbc":"demo.gbc","gba":"demo.gba","megadrive":"demo.gen"}
+        for system,filename in expected.items(): assert system_from_path(ROM_ROOT/system/filename)==system
+        assert system_from_path(Path("/tmp/unclassified.rom")) is None
+        assert normalize_system("Mega Drive")=="megadrive"
+        print("VulkanOS Game Runtime self-test: OK"); return 0
+    return 1
+
+if __name__=="__main__": raise SystemExit(main())
