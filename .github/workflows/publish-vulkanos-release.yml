@@ -1,11 +1,16 @@
-name: Publish VulkanOS PC public Alpha release
+name: Publish VulkanOS PC Dashboard Alpha Release
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-vulkanos-release.yml"
   workflow_dispatch:
     inputs:
       run_id:
-        description: "Successful Build VulkanOS PC Alpha workflow run ID"
-        required: true
+        description: "ID da execução bem-sucedida de Build VulkanOS PC Alpha"
+        required: false
+        default: "45919988737"
         type: string
 
 permissions:
@@ -14,128 +19,102 @@ permissions:
 
 jobs:
   publish:
+    name: Publish dashboard ISO
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
-      - name: Validate successful VulkanOS ISO build
-        id: validate
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RUN_ID: ${{ inputs.run_id }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "Invalid run ID"; exit 1; }
-          RUN="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID")"
-          [[ "$(jq -r .status <<<"$RUN")" == "completed" ]] || { echo "Build is not completed"; exit 1; }
-          [[ "$(jq -r .conclusion <<<"$RUN")" == "success" ]] || { echo "Build did not succeed"; exit 1; }
-          [[ "$(jq -r .path <<<"$RUN")" == ".github/workflows/build-vulkanos-pc.yml" ]] || { echo "Run is not the VulkanOS PC build workflow"; exit 1; }
-          echo "head_sha=$(jq -r .head_sha <<<"$RUN")" >> "$GITHUB_OUTPUT"
+      - name: Checkout VulkanOS
+        uses: actions/checkout@v4
 
-      - name: Download the successful ISO build artifact
+      - name: Download dashboard build artifact
         uses: actions/download-artifact@v4
         with:
           name: VulkanOS-PC-Alpha-0.1-amd64
           path: release-assets
-          run-id: ${{ inputs.run_id }}
+          run-id: ${{ inputs.run_id || '45919988737' }}
           github-token: ${{ github.token }}
 
-      - name: Verify and prepare public release assets
-        id: prepare
+      - name: Verify ISO and prepare release assets
         shell: bash
         run: |
           set -euo pipefail
-          ISO="release-assets/VulkanOS-PC-Alpha-0.1-amd64.iso"
-          test -s "$ISO"
+          OLD_ISO="release-assets/VulkanOS-PC-Alpha-0.1-amd64.iso"
+          ISO="release-assets/VulkanOS-PC-Alpha-0.2-amd64.iso"
+          test -s "$OLD_ISO"
+          test -s release-assets/SHA256SUMS
+          test -s release-assets/dashboard-preview.png
           (cd release-assets && sha256sum -c SHA256SUMS)
-          BYTES="$(stat -c '%s' "$ISO")"
-          echo "ISO size: $BYTES bytes"
 
-          if (( BYTES > 1800000000 )); then
+          mv "$OLD_ISO" "$ISO"
+          sed -i 's/VulkanOS-PC-Alpha-0.1-amd64.iso/VulkanOS-PC-Alpha-0.2-amd64.iso/' release-assets/SHA256SUMS
+          cp LICENSE-ALPHA-0.1.txt release-assets/LICENSE-VULKANOS-ALPHA.txt
+
+          SIZE=$(stat -c %s "$ISO")
+          if (( SIZE > 1800000000 )); then
             split -b 1800M -d -a 2 "$ISO" "$ISO.part-"
             rm "$ISO"
             cat > release-assets/REASSEMBLE.txt <<'EOF'
-          VulkanOS PC Alpha 0.1 — ISO parçalarını birleştirme
+          VulkanOS PC Alpha 0.2 — reconstruir a ISO
 
-          Windows (CMD):
-          copy /b VulkanOS-PC-Alpha-0.1-amd64.iso.part-00+VulkanOS-PC-Alpha-0.1-amd64.iso.part-01 VulkanOS-PC-Alpha-0.1-amd64.iso
+          Baixe TODAS as partes .iso.part-00, .iso.part-01, etc. para a mesma pasta.
+
+          Windows CMD:
+          copy /b VulkanOS-PC-Alpha-0.2-amd64.iso.part-00+VulkanOS-PC-Alpha-0.2-amd64.iso.part-01 VulkanOS-PC-Alpha-0.2-amd64.iso
 
           Linux/macOS:
-          cat VulkanOS-PC-Alpha-0.1-amd64.iso.part-00 VulkanOS-PC-Alpha-0.1-amd64.iso.part-01 > VulkanOS-PC-Alpha-0.1-amd64.iso
+          cat VulkanOS-PC-Alpha-0.2-amd64.iso.part-* > VulkanOS-PC-Alpha-0.2-amd64.iso
 
-          Depois, confira o SHA-256 usando SHA256SUMS:
-          sha256sum -c SHA256SUMS
-          No Windows, use:
-          certutil -hashfile VulkanOS-PC-Alpha-0.1-amd64.iso SHA256
-          Compare o resultado com o valor em SHA256SUMS.
+          Depois confira o SHA-256 usando SHA256SUMS.
+          Linux: sha256sum -c SHA256SUMS
+          Windows PowerShell: Get-FileHash .\VulkanOS-PC-Alpha-0.2-amd64.iso -Algorithm SHA256
+          O resultado deve ser igual ao valor em SHA256SUMS.
           EOF
           else
             touch release-assets/REASSEMBLE.txt
           fi
 
-          test -s release-assets/SHA256SUMS
           ls -lh release-assets
-          
-      - name: Publish public prerelease
+          (cd release-assets && sha256sum -c SHA256SUMS)
+
+      - name: Write release notes
+        shell: bash
+        run: |
+          cat > RELEASE-NOTES.md <<'EOF'
+          # VulkanOS PC Alpha 0.2 — Dashboard Edition
+
+          Esta versão contém a nova interface própria do VulkanOS em estilo console, com tema escuro em vermelho e preto.
+
+          ## O que há nesta ISO
+          - Dashboard com Biblioteca, Emuladores, Navegador, Steam, Configurações e Sobre.
+          - Indicadores de rede, controles, Bluetooth e bateria.
+          - Cartões para Steam, RetroArch, ES-DE, Hydra Launcher e Firefox.
+          - Lista básica de jogos Steam instalados e ROMs encontradas em ~/ROMs.
+          - Navegação básica por teclado e joysticks Linux (/dev/input/js*).
+          - ES-DE continua como frontend de emulação e é aberto pelo dashboard.
+
+          ## Base e limitações
+          Continua sendo um sistema baseado em Debian 13 (Trixie) com XFCE e componentes de jogos. O dashboard é experimental e não foi validado em hardware físico nesta publicação. O suporte a controles não é universal. Assistente BOOT/VKROMS, RUNVK, kernel/drivers próprios e ports específicos ainda não existem. Esta ISO é apenas para PCs amd64, não para handhelds ARM.
+
+          ## Download
+          Como a ISO ultrapassa o limite de tamanho por arquivo do GitHub Releases, ela está dividida em partes .iso.part-00, .iso.part-01 etc. Baixe todas as partes e una-as conforme REASSEMBLE.txt. Depois valide o arquivo reconstruído com SHA256SUMS.
+
+          O arquivo dashboard-preview.png mostra a prévia gerada automaticamente no teste virtual 1280x720; não é uma foto de execução em hardware físico.
+
+          Teste primeiro em modo Live com um pendrive separado. Gravar ou instalar a ISO pode apagar dados. Faça backup e confira o dispositivo selecionado. Nenhuma ROM, BIOS ou jogo está incluído.
+
+          ## Licença
+          Os materiais originais VulkanOS estão sujeitos à licença personalizada de avaliação e compartilhamento incluída como LICENSE-VULKANOS-ALPHA.txt. Componentes de terceiros continuam sujeitos às respectivas licenças. Esta licença não é open source.
+          EOF
+
+      - name: Publish GitHub Release with ISO assets
         env:
           GH_TOKEN: ${{ github.token }}
-          HEAD_SHA: ${{ steps.validate.outputs.head_sha }}
         shell: bash
         run: |
           set -euo pipefail
-          TAG="v0.1.0-alpha.1"
-          cat > RELEASE-NOTES.md <<'EOF'
-          # VulkanOS PC Alpha 0.1 — Primeiro teste público
-
-          **Aviso honesto:** por enquanto, isto é basicamente um **Debian 13 (Trixie) enxuto e personalizado**, com XFCE e alguns componentes voltados a jogos. Ainda não é uma distribuição independente, nem a experiência final do console VulkanOS. Esta publicação existe para receber testes e feedback.
-
-          ## O que esta ISO traz
-          - Desktop XFCE leve, NetworkManager, Bluetooth e áudio PipeWire.
-          - Firefox ESR.
-          - Pacote instalador do Steam e bibliotecas gráficas Mesa/Vulkan de 64 e 32 bits.
-          - RetroArch com alguns cores Libretro.
-          - Hydra Launcher para Linux amd64.
-          - ES-DE como biblioteca visual para jogos e emuladores.
-          - AntiMicroX para mapear manualmente botões de controles para teclado e mouse.
-          - Pastas iniciais `~/ROMs`, `~/Games/Downloads`, `~/Apps` e `~/Themes`.
-
-          ## O que ainda NÃO existe
-          - Assistente de discos duplos com partições BOOT e VKROMS.
-          - Modo RUNVK e montagem automática do disco externo de jogos.
-          - Mapeamento universal e automático de todos os controles.
-          - Kernel próprio, drivers próprios ou ports específicos de jogos.
-          - Interface final de console e integração completa do ecossistema VulkanOS.
-
-          ## Como testar
-          1. Baixe todos os arquivos ISO `part-00` e `part-01` desta release.
-          2. Una os pedaços seguindo `REASSEMBLE.txt` para reconstruir o arquivo ISO.
-          3. Confira o SHA-256 com `SHA256SUMS`.
-          4. Grave a ISO em um **pendrive separado** usando Rufus. Quando perguntado, selecione o modo DD.
-          5. Teste primeiro o boot Live. Só instale em um disco depois de fazer backup e conferir cuidadosamente o destino.
-
-          ## Limitações e riscos
-          Esta é uma build experimental. A compilação bem-sucedida não significa que foi testada em vários computadores. Compatibilidade de GPU, Wi-Fi, áudio, controles, Steam e jogos varia conforme o hardware e ainda precisa de testes reais. O Steam termina a configuração inicial com internet. Nenhum jogo, ROM ou BIOS é distribuído junto.
-
-          **Não use em máquina de produção e não instale em um disco com dados importantes.** Faça backup antes de qualquer instalação. Relate problemas com o modelo do PC, GPU e logs/fotos do erro.
-
-          O objetivo desta Alpha é simples: provar que a primeira base do VulkanOS PC inicia e recolher feedback para as próximas versões.
-          EOF
-
-          ASSETS=()
-          for f in release-assets/VulkanOS-PC-Alpha-0.1-amd64.iso.part-*; do
-            [[ -f "$f" ]] && ASSETS+=("$f")
-          done
-          if (( ${#ASSETS[@]} == 0 )); then
-            ASSETS+=("release-assets/VulkanOS-PC-Alpha-0.1-amd64.iso")
-          fi
-          ASSETS+=("release-assets/SHA256SUMS")
-          if [[ -s release-assets/REASSEMBLE.txt ]]; then
-            ASSETS+=("release-assets/REASSEMBLE.txt")
-          fi
-
-          gh release create "$TAG" "${ASSETS[@]}" \
+          TAG="v0.2.0-alpha.1"
+          gh release create "$TAG" release-assets/* \
             --repo "$GITHUB_REPOSITORY" \
-            --title "VulkanOS PC Alpha 0.1 — Primeiro teste público" \
+            --title "VulkanOS PC Alpha 0.2 — Dashboard Edition" \
             --notes-file RELEASE-NOTES.md \
-            --prerelease \
-            --target "$HEAD_SHA"
+            --prerelease
