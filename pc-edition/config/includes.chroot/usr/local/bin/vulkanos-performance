@@ -1,0 +1,88 @@
+#!/usr/bin/python3
+"""VulkanOS Performance Center: per-user GameMode/MangoHud settings and diagnostics."""
+import json, os, shutil, subprocess, sys
+from pathlib import Path
+import gi
+gi.require_version("Gtk","3.0")
+from gi.repository import Gtk
+
+CONFIG=Path(os.environ.get("XDG_CONFIG_HOME",str(Path.home()/".config")))/"vulkanos"
+SETTINGS=CONFIG/"performance.json"
+
+def read_settings():
+    try: data=json.loads(SETTINGS.read_text(encoding="utf-8"))
+    except (OSError,ValueError): data={}
+    return {"profile":data.get("profile","balanced"),"gamemode":bool(data.get("gamemode",False)),"mangohud":bool(data.get("mangohud",False))}
+
+def save_settings(settings):
+    CONFIG.mkdir(parents=True,exist_ok=True)
+    tmp=SETTINGS.with_suffix(".tmp")
+    tmp.write_text(json.dumps(settings,indent=2)+"\n",encoding="utf-8")
+    tmp.replace(SETTINGS)
+
+def command_output(command,timeout=8):
+    executable=shutil.which(command[0])
+    if not executable: return f"{command[0]}: não instalado"
+    try:
+        result=subprocess.run([executable,*command[1:]],capture_output=True,text=True,timeout=timeout)
+        output=(result.stdout or result.stderr).strip()
+        return output[:1800] if output else f"{command[0]} não retornou detalhes."
+    except (OSError,subprocess.TimeoutExpired) as error: return f"{command[0]}: {error}"
+
+def diagnostics():
+    return "\n\n".join(("VULKANOS PERFORMANCE REPORT",
+        command_output(["vulkaninfo","--summary"]),
+        command_output(["glxinfo","-B"]),
+        command_output(["pactl","info"])))
+
+class PerformanceCenter(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="VulkanOS Performance Center")
+        self.set_default_size(760,520); self.set_border_width(20)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        settings=read_settings()
+        root=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=14); self.add(root)
+        title=Gtk.Label()
+        title.set_markup("<span size='xx-large' weight='bold'>VULKANOS PERFORMANCE</span>")
+        title.set_xalign(0); root.pack_start(title,False,False,0)
+        intro=Gtk.Label(label="Ajustes por usuário para jogos iniciados pelo VulkanOS Game Runtime.")
+        intro.set_xalign(0); intro.set_line_wrap(True); root.pack_start(intro,False,False,0)
+        row=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=16)
+        row.pack_start(Gtk.Label(label="Perfil de jogo"),False,False,0)
+        self.profile=Gtk.ComboBoxText()
+        self.profile.append("balanced","Equilibrado"); self.profile.append("performance","Desempenho")
+        self.profile.set_active_id(settings["profile"]); row.pack_end(self.profile,False,False,0)
+        root.pack_start(row,False,False,0)
+        self.gamemode=Gtk.CheckButton(label="Ativar GameMode ao iniciar ROMs")
+        self.gamemode.set_active(settings["gamemode"]); root.pack_start(self.gamemode,False,False,0)
+        self.mangohud=Gtk.CheckButton(label="Mostrar MangoHud nos jogos compatíveis")
+        self.mangohud.set_active(settings["mangohud"]); root.pack_start(self.mangohud,False,False,0)
+        note=Gtk.Label(label="Vulkan é selecionado pelo aplicativo quando suportado; o VulkanOS não força Vulkan em hardware ou emuladores incompatíveis. Os shaders ficam configuráveis dentro do RetroArch. O perfil vale apenas para jogos iniciados pelo runtime do VulkanOS.")
+        note.set_xalign(0); note.set_line_wrap(True); root.pack_start(note,False,False,0)
+        buttons=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=8); root.pack_start(buttons,False,False,0)
+        audio=Gtk.Button(label="CONFIGURAR ÁUDIO"); audio.connect("clicked",lambda *_:self.open_app("pavucontrol")); buttons.pack_start(audio,False,False,0)
+        vulkan=Gtk.Button(label="DIAGNÓSTICO GRÁFICO / ÁUDIO"); vulkan.connect("clicked",self.show_diagnostics); buttons.pack_start(vulkan,False,False,0)
+        save=Gtk.Button(label="SALVAR PERFIL"); save.connect("clicked",self.save); buttons.pack_start(save,False,False,0)
+        self.status=Gtk.Label(label=""); self.status.set_xalign(0); self.status.set_line_wrap(True)
+        root.pack_start(self.status,False,False,0)
+
+    def open_app(self,app):
+        if shutil.which(app): subprocess.Popen([app],start_new_session=True)
+        else: self.status.set_text(f"{app} não está instalado.")
+
+    def show_diagnostics(self,*_args):
+        dialog=Gtk.MessageDialog(transient_for=self,flags=Gtk.DialogFlags.MODAL,
+            message_type=Gtk.MessageType.INFO,buttons=Gtk.ButtonsType.CLOSE,text="DIAGNÓSTICO DO PC")
+        dialog.format_secondary_text(diagnostics()); dialog.run(); dialog.destroy()
+
+    def save(self,*_args):
+        data={"profile":self.profile.get_active_id() or "balanced",
+              "gamemode":self.gamemode.get_active(),"mangohud":self.mangohud.get_active()}
+        save_settings(data)
+        self.status.set_text("Perfil salvo. As próximas ROMs abertas pelo VulkanOS Game Runtime usarão estas opções.")
+
+def main():
+    if "--diagnostics" in sys.argv: print(diagnostics()); return 0
+    window=PerformanceCenter(); window.show_all(); Gtk.main(); return 0
+
+if __name__=="__main__": raise SystemExit(main())

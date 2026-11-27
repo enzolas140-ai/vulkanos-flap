@@ -1,0 +1,3 @@
+# Grant the active local desktop session access to recognized game controllers.
+SUBSYSTEM=="input", ENV{ID_INPUT_JOYSTICK}=="1", TAG+="uaccess"
+SUBSYSTEM=="input", KERNEL=="js[0-9]*", TAG+="uaccess"

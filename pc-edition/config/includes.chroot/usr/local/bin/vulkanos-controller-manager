@@ -1,0 +1,119 @@
+#!/usr/bin/python3
+"""VulkanOS Controller Manager: detect Linux gamepads and open calibration/mapping tools."""
+import json, os, shutil, subprocess, sys
+from pathlib import Path
+import gi
+gi.require_version("Gtk","3.0")
+from gi.repository import Gtk, GLib
+
+CONFIG=Path(os.environ.get("XDG_CONFIG_HOME",str(Path.home()/".config")))/"vulkanos"
+PROFILES=CONFIG/"controllers.json"
+try:
+    from evdev import InputDevice, list_devices, ecodes
+except ImportError:
+    InputDevice=list_devices=ecodes=None
+
+def connected_controllers():
+    found=[]
+    if list_devices is None: return found
+    gamepad_keys={getattr(ecodes,name,None) for name in ("BTN_GAMEPAD","BTN_SOUTH","BTN_A","BTN_TRIGGER")}
+    gamepad_keys.discard(None)
+    for node in list_devices():
+        device=None
+        try:
+            device=InputDevice(node)
+            caps=device.capabilities()
+            axes=caps.get(ecodes.EV_ABS,[])
+            keys=caps.get(ecodes.EV_KEY,[])
+            if axes and (any(key in gamepad_keys for key in keys) or len(axes)>=2):
+                found.append({
+                    "path":node,"name":device.name or "Controle sem nome",
+                    "vendor":int(device.info.vendor),"product":int(device.info.product),
+                    "phys":device.phys or "","uniq":device.uniq or "",
+                    "axes":len(axes),"buttons":sum(code>=ecodes.BTN_MISC for code in keys)
+                })
+        except (OSError,PermissionError):
+            continue
+        finally:
+            if device is not None:
+                try: device.close()
+                except OSError: pass
+    return found
+
+def save_profiles(devices):
+    CONFIG.mkdir(parents=True,exist_ok=True)
+    records=[{"id":f"{item['vendor']:04x}:{item['product']:04x}","name":item["name"],
+              "path":item["path"],"phys":item["phys"],"uniq":item["uniq"],
+              "axes":item["axes"],"buttons":item["buttons"]} for item in devices]
+    tmp=PROFILES.with_suffix(".tmp")
+    tmp.write_text(json.dumps(records,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+    tmp.replace(PROFILES)
+
+def launch_app(names):
+    for name in names:
+        executable=shutil.which(name)
+        if executable:
+            subprocess.Popen([executable],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL,start_new_session=True)
+            return True
+    return False
+
+class ControllerManager(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="VulkanOS Controller Manager")
+        self.set_default_size(780,520); self.set_border_width(18)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        root=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=12); self.add(root)
+        heading=Gtk.Label()
+        heading.set_markup("<span size='xx-large' weight='bold'>CONTROLLER MANAGER</span>")
+        heading.set_xalign(0); root.pack_start(heading,False,False,0)
+        intro=Gtk.Label(label="Controles reconhecidos pelo Linux. Atualize a lista, teste e calibre os eixos ou abra o mapeador.")
+        intro.set_xalign(0); intro.set_line_wrap(True); root.pack_start(intro,False,False,0)
+        self.model=Gtk.ListStore(str,str,str,str)
+        self.view=Gtk.TreeView(model=self.model)
+        for index,label in enumerate(("Controle","Dispositivo","Eixos","Botões")):
+            renderer=Gtk.CellRendererText(); column=Gtk.TreeViewColumn(label,renderer,text=index)
+            column.set_resizable(True); self.view.append_column(column)
+        scroll=Gtk.ScrolledWindow(); scroll.set_vexpand(True); scroll.add(self.view)
+        root.pack_start(scroll,True,True,0)
+        actions=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=8); root.pack_start(actions,False,False,0)
+        for label,callback in (("ATUALIZAR",self.refresh),("TESTAR / CALIBRAR",self.calibrate),
+                               ("MAPEAR TECLADO / MOUSE",self.map_controls),("FECHAR",lambda *_:self.destroy())):
+            button=Gtk.Button(label=label); button.connect("clicked",callback); actions.pack_start(button,False,False,0)
+        self.status=Gtk.Label(label=""); self.status.set_xalign(0); self.status.set_line_wrap(True)
+        root.pack_start(self.status,False,False,0)
+        self.refresh(); GLib.timeout_add_seconds(5,self.refresh)
+
+    def refresh(self,*_args):
+        self.model.clear()
+        devices=connected_controllers()
+        for item in devices:
+            self.model.append([f"{item['name']} ({item['vendor']:04X}:{item['product']:04X})",
+                               item["path"],str(item["axes"]),str(item["buttons"])])
+        try: save_profiles(devices)
+        except OSError as error: self.status.set_text(f"Falha ao salvar perfis: {error}")
+        else:
+            self.status.set_text(
+                f"{len(devices)} controle(s) detectado(s). O RetroArch usa SDL/udev para entrada direta. "
+                "O AntiMicro é um recurso auxiliar para mapear gamepad como teclado/mouse."
+                if devices else
+                "Nenhum gamepad detectado. Conecte por USB ou Bluetooth, confira se o Linux reconheceu o dispositivo e atualize a lista."
+            )
+        return True
+
+    def calibrate(self,*_args):
+        if not launch_app(("jstest-gtk",)):
+            self.status.set_text("jstest-gtk não está instalado.")
+
+    def map_controls(self,*_args):
+        if not launch_app(("antimicro","antimicrox")):
+            self.status.set_text("AntiMicro não está instalado.")
+
+def main():
+    if "--self-test" in sys.argv:
+        if InputDevice is None:
+            print("python3-evdev não disponível",file=sys.stderr); return 1
+        print("VulkanOS Controller Manager self-test: OK"); return 0
+    window=ControllerManager(); window.show_all(); Gtk.main(); return 0
+
+if __name__=="__main__": raise SystemExit(main())
