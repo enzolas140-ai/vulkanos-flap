@@ -37,3 +37,7 @@ Mini game arcade original, inspirado no estilo tap-to-fly, com tema vulcânico V
 - Sem dependências externas, sem coleta de dados e sem permissões do Discord.
 
 O workflow .github/workflows/pages.yml publica o jogo no GitHub Pages após push na branch main.
+
+## Licenca da VulkanOS PC Alpha 0.1
+
+A release original `v0.1.0-alpha.1` (a versao anterior ao dashboard experimental) permite testes e compartilhamento gratuito de copias originais e inalteradas, sob a licenca personalizada [LICENSE-ALPHA-0.1.txt](LICENSE-ALPHA-0.1.txt). A licenca cobre somente os materiais originais do projeto VulkanOS; componentes de terceiros mantem suas proprias licencas.

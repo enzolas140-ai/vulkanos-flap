@@ -1,0 +1,42 @@
+# VulkanOS PC Alpha 0.1 — Primeiro teste público
+
+**Aviso honesto:** por enquanto, isto é basicamente um **Debian 13 (Trixie) enxuto e personalizado**, com XFCE e alguns componentes voltados a jogos. Ainda não é uma distribuição independente, nem a experiência final do console VulkanOS. Esta publicação existe para receber testes e feedback.
+
+## Licença desta versão
+
+A release original **v0.1.0-alpha.1** é destinada a avaliação e testes. É permitido instalar, testar e compartilhar gratuitamente cópias completas e inalteradas. Não é permitido modificar os materiais originais do projeto VulkanOS, publicar versões alteradas usando a identidade VulkanOS, remover os avisos de autoria ou vender a cópia original sem autorização.
+
+Leia o arquivo **LICENSE-ALPHA-0.1.txt** anexado a esta release. O pacote **VulkanOS-PC-Alpha-0.1-source-licensed.zip** contém o código-fonte da versão antiga junto com a licença.
+
+**Importante:** a licença personalizada cobre apenas os materiais originais do projeto VulkanOS. Debian, Linux, XFCE, Steam, RetroArch, Mesa, Hydra Launcher, ES-DE e demais componentes de terceiros continuam sujeitos às suas próprias licenças. Os direitos concedidos por essas licenças não são retirados nem reduzidos.
+
+## O que esta ISO traz
+- Desktop XFCE leve, NetworkManager, Bluetooth e áudio PipeWire.
+- Firefox ESR.
+- Pacote instalador do Steam e bibliotecas gráficas Mesa/Vulkan de 64 e 32 bits.
+- RetroArch com alguns cores Libretro.
+- Hydra Launcher para Linux amd64.
+- ES-DE como biblioteca visual para jogos e emuladores.
+- AntiMicroX para mapear manualmente botões de controles para teclado e mouse.
+- Pastas iniciais `~/ROMs`, `~/Games/Downloads`, `~/Apps` e `~/Themes`.
+
+## O que ainda NÃO existe
+- Assistente de discos duplos com partições BOOT e VKROMS.
+- Modo RUNVK e montagem automática do disco externo de jogos.
+- Mapeamento universal e automático de todos os controles.
+- Kernel próprio, drivers próprios ou ports específicos de jogos.
+- Interface final de console e integração completa do ecossistema VulkanOS.
+
+## Como testar
+1. Baixe todos os arquivos ISO `part-00` e `part-01` desta release.
+2. Una os pedaços seguindo `REASSEMBLE.txt` para reconstruir o arquivo ISO.
+3. Confira o SHA-256 com `SHA256SUMS`.
+4. Grave a ISO em um **pendrive separado** usando Rufus. Quando perguntado, selecione o modo DD.
+5. Teste primeiro o boot Live. Só instale em um disco depois de fazer backup e conferir cuidadosamente o destino.
+
+## Limitações e riscos
+Esta é uma build experimental. A compilação bem-sucedida não significa que foi testada em vários computadores. Compatibilidade de GPU, Wi-Fi, áudio, controles, Steam e jogos varia conforme o hardware e ainda precisa de testes reais. O Steam termina a configuração inicial com internet. Nenhum jogo, ROM ou BIOS é distribuído junto.
+
+**Não use em máquina de produção e não instale em um disco com dados importantes.** Faça backup antes de qualquer instalação. Relate problemas com o modelo do PC, GPU e logs/fotos do erro.
+
+O objetivo desta Alpha é simples: provar que a primeira base do VulkanOS PC inicia e recolher feedback para as próximas versões.

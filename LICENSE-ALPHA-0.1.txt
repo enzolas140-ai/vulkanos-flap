@@ -1,0 +1,64 @@
+VULKANOS PC ALPHA 0.1
+LICENCA DE AVALIACAO E COMPARTILHAMENTO — VERSAO 1.0
+Data: 27 de novembro de 2026
+
+Copyright (c) 2026 VulkanOS Project. Todos os direitos reservados sobre os Materiais VulkanOS originais.
+
+1. ESCOPO
+
+Esta licenca aplica-se exclusivamente a versao VulkanOS PC Alpha 0.1 publicada na release v0.1.0-alpha.1 do repositorio enzolas140-ai/vulkanos-flap, e aos Materiais VulkanOS originais incluidos nessa versao.
+
+"Materiais VulkanOS" significa somente os arquivos e elementos criados pelo projeto VulkanOS e sobre os quais o projeto detem os respectivos direitos, incluindo seus scripts de build e configuracao, hooks, documentacao, artes, papel de parede, identidade visual e organizacao propria dos arquivos.
+
+Esta licenca NAO substitui nem altera as licencas de Debian, Linux, XFCE, Steam, RetroArch, Mesa, Hydra Launcher, ES-DE, bibliotecas, drivers, firmware ou qualquer outro componente de terceiros. Esses componentes continuam sujeitos as respectivas licencas e avisos de seus titulares.
+
+2. PERMISSOES CONCEDIDAS
+
+Desde que cumpra esta licenca, voce recebe permissao limitada, mundial, gratuita, nao exclusiva e revogavel para:
+
+a) baixar, instalar, executar e testar a copia original da VulkanOS PC Alpha 0.1;
+b) avaliar o sistema em computadores e ambientes de teste;
+c) manter uma copia de seguranca para uso proprio; e
+d) compartilhar gratuitamente copias completas e inalteradas da mesma versao, desde que mantenha todos os arquivos, avisos de autoria, creditos e esta licenca junto com a distribuicao.
+
+Quem receber uma copia compartilhada recebe estas mesmas permissoes e restricoes.
+
+3. RESTRICOES SOBRE OS MATERIAIS VULKANOS
+
+Sem autorizacao previa e expressa do titular dos direitos, voce NAO pode:
+
+a) modificar, adaptar, traduzir, alterar ou criar versoes derivadas dos Materiais VulkanOS;
+b) publicar ou distribuir uma copia modificada dos Materiais VulkanOS;
+c) remover ou ocultar avisos de autoria, creditos ou esta licenca;
+d) apresentar uma versao modificada como versao oficial, aprovada ou mantida pelo projeto VulkanOS; ou
+e) vender os Materiais VulkanOS ou cobrar pelo acesso a copia original da Alpha 0.1.
+
+A permissao de compartilhamento cobre somente a distribuicao gratuita da versao original e completa, sem alteracoes nos Materiais VulkanOS.
+
+4. COMPONENTES DE TERCEIROS
+
+As restricoes da secao 3 nao se aplicam ao codigo, programas, firmware, documentacao ou outros elementos de terceiros que acompanham a ISO e que estejam sujeitos a licencas proprias. Nada neste documento reduz, substitui ou acrescenta restricoes aos direitos que essas licencas concedem.
+
+Se uma licenca de terceiro permitir ou exigir modificacao, copia, redistribuicao ou disponibilizacao de codigo-fonte de seu componente, essa licenca prevalece para aquele componente. Uma compilacao modificada por terceiros nao pode, porem, ser apresentada como uma versao oficial do VulkanOS sem autorizacao do projeto.
+
+5. DIREITOS RESERVADOS
+
+Todos os direitos sobre os Materiais VulkanOS que nao forem expressamente concedidos nesta licenca ficam reservados ao respectivo titular. Esta licenca nao concede direitos sobre marcas, nomes, logotipos ou materiais de terceiros.
+
+6. AUSENCIA DE GARANTIA
+
+A VulkanOS PC Alpha 0.1 e fornecida "NO ESTADO EM QUE SE ENCONTRA", em carater experimental e para avaliacao. Na medida permitida pela lei aplicavel, o projeto nao oferece garantias de funcionamento, compatibilidade, seguranca ou adequacao a uma finalidade especifica. O usuario e responsavel por testar o sistema e proteger seus dados antes de qualquer instalacao.
+
+7. VIOLACAO
+
+O descumprimento das condicoes desta licenca encerra automaticamente as permissoes concedidas por ela, sem eliminar os direitos e obrigacoes que decorram das licencas dos componentes de terceiros ou de normas legais obrigatorias.
+
+8. LEGISLACAO E DIREITOS OBRIGATORIOS
+
+Esta licenca deve ser interpretada de acordo com a legislacao aplicavel. Nenhuma disposicao pretende afastar direitos ou excecoes que nao possam ser renunciados por lei.
+
+9. NATUREZA DA LICENCA
+
+Esta e uma licenca personalizada e restritiva para avaliacao e compartilhamento da VulkanOS PC Alpha 0.1. Ela nao e uma licenca OSI-approved nem uma licenca open source, pois nao concede permissao geral para criar e distribuir obras derivadas.
+
+Fim da licenca.
