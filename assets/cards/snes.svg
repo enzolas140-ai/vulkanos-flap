@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="300" viewBox="0 0 640 300">
+<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#72e7e9"/><stop offset=".62" stop-color="#d5f1bd"/><stop offset="1" stop-color="#5dba68"/></linearGradient><linearGradient id="hill" x2="0" y2="1"><stop stop-color="#57bd59"/><stop offset="1" stop-color="#176a47"/></linearGradient></defs>
+<rect width="640" height="300" fill="url(#sky)"/>
+<circle cx="526" cy="64" r="40" fill="#fff5ae" opacity=".9"/>
+<g fill="#fff" opacity=".86"><rect x="55" y="62" width="83" height="18" rx="9"/><rect x="76" y="48" width="42" height="17" rx="8"/><rect x="177" y="101" width="65" height="15" rx="8"/><rect x="196" y="89" width="35" height="15" rx="7"/></g>
+<path d="M0 202 L95 154 L152 183 L260 125 L342 186 L452 130 L545 182 L640 143 V300 H0Z" fill="#8ccf74"/>
+<path d="M0 234 L105 176 L184 215 L295 158 L382 215 L503 168 L640 222 V300 H0Z" fill="url(#hill)"/>
+<g fill="#f3dc77"><rect x="55" y="211" width="27" height="17"/><rect x="82" y="211" width="27" height="17"/><rect x="109" y="211" width="27" height="17"/><rect x="55" y="228" width="27" height="17"/><rect x="109" y="228" width="27" height="17"/><rect x="483" y="208" width="27" height="17"/><rect x="510" y="208" width="27" height="17"/><rect x="537" y="208" width="27" height="17"/></g>
+<g fill="#fff" opacity=".9"><path d="M0 0H640V23H0Z"/></g>
+<text x="28" y="42" fill="#244b53" font-family="DejaVu Sans,sans-serif" font-size="19" font-weight="900" letter-spacing="4">VULKANOS RETRO</text>
+<rect x="0" y="252" width="640" height="48" fill="#071b22" opacity=".78"/>
+<text x="28" y="284" fill="#fff" font-family="DejaVu Sans,sans-serif" font-size="28" font-weight="900">SUPER NINTENDO</text>
+<text x="610" y="282" fill="#d8f9ca" text-anchor="end" font-family="DejaVu Sans,sans-serif" font-size="17">16-BIT</text>
+</svg>

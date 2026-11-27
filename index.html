@@ -1,77 +1,372 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#100b12"><meta name="description" content="VulkanOS Flap — mini game arcade vulcânico.">
-<title>VulkanOS Flap — Secret Arcade</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09090e">
+<meta name="description" content="VulkanOS — um projeto Linux focado em jogos, com biblioteca visual, emulação, Steam e uma experiência de console para PC.">
+<meta property="og:title" content="VulkanOS — Seu PC. Sua biblioteca. Sua próxima era.">
+<meta property="og:description" content="Conheça a edição PC experimental do VulkanOS, acompanhe as builds e explore o projeto.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://enzolas140-ai.github.io/vulkanos-flap/assets/share-card.svg">
+<link rel="icon" type="image/svg+xml" href="assets/vulkanos-mark.svg">
+<title>VulkanOS — PC Edition</title>
 <style>
-:root{color-scheme:dark;--red:#ff3b32;--orange:#ff8a28}
+:root{color-scheme:dark;--bg:#09090e;--panel:#111118;--panel2:#17151d;--text:#f7f4f5;--muted:#b3aab2;--line:#34232b;--red:#f43d55;--red2:#a91e39;--orange:#ff7650;--green:#63d58a;--max:1200px}
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -10%,#4b1821 0,#160d17 45%,#08080d 100%);color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:18px}
-.wrap{width:min(100%,760px)}
-header{text-align:center;margin:0 auto 16px}
-.logo{font-size:clamp(26px,5vw,44px);font-weight:1000;letter-spacing:.04em;text-shadow:0 3px 0 #57131a,0 0 24px #ff382b66}
-.logo span{color:var(--red)}
-.tag{margin-top:2px;color:#f5c7bd;font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:12px}
-.card{background:linear-gradient(145deg,#211622,#100e16 70%);border:1px solid #7d2938;border-radius:24px;box-shadow:0 18px 70px #0009,0 0 38px #ef342022;padding:14px}
-.game-shell{position:relative;overflow:hidden;border-radius:16px;background:#101c39;max-width:520px;margin:auto;border:1px solid #ff623e55;touch-action:manipulation}
-canvas{display:block;width:100%;height:auto;aspect-ratio:420/620;touch-action:manipulation}
-.hud{position:absolute;inset:12px 12px auto;display:flex;justify-content:space-between;pointer-events:none;gap:8px}
-.pill{background:#090a13bb;border:1px solid #ffffff26;border-radius:999px;padding:7px 12px;font-weight:900;text-shadow:0 2px 4px #000}
-.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(#070a1644,#070711aa)}
-.overlay.hidden{display:none}
-.overlay-box{max-width:340px;background:#130f1de8;border:1px solid #ff573d88;border-radius:20px;padding:22px;box-shadow:0 10px 50px #0009}
-.overlay h2{margin:0 0 8px;font-size:28px}.overlay p{margin:6px 0 16px;color:#e0d6df;line-height:1.45}
-button{border:0;cursor:pointer;font:inherit;font-weight:900;color:white;background:linear-gradient(135deg,#ff3c31,#c81732);border-radius:14px;padding:13px 22px;box-shadow:0 6px 0 #761528,0 0 22px #fa3c3544}
-button:active{transform:translateY(3px);box-shadow:0 3px 0 #761528}button:focus-visible{outline:3px solid #fff;outline-offset:3px}
-.help{text-align:center;color:#e4d8e2;margin:14px auto 0;font-size:13px;line-height:1.5}
-.controls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:14px auto 0}
-.controls button.secondary{background:#292332;box-shadow:0 5px 0 #100c16;border:1px solid #594458}
-footer{text-align:center;color:#9e91a0;font-size:12px;margin:17px 0 0}footer strong{color:#ff7660}
-@media(max-width:540px){body{padding:9px}.card{padding:8px;border-radius:18px}.help{font-size:12px}.overlay-box{padding:16px}.overlay h2{font-size:23px}}
+html{scroll-behavior:smooth;scroll-padding-top:88px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+button{font:inherit}
+.wrap{width:min(var(--max),calc(100% - 44px));margin-inline:auto}
+.topbar{height:76px;position:sticky;top:0;z-index:30;background:#09090ee8;border-bottom:1px solid #ffffff12;backdrop-filter:blur(18px)}
+.nav{height:100%;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.brand{display:flex;align-items:center;gap:11px;font-size:20px;font-weight:950;letter-spacing:.08em}
+.brand img{width:35px;height:35px}
+.brand span{color:var(--red)}
+.navlinks{display:flex;align-items:center;gap:27px;color:#c9c0c7;font-size:13px;font-weight:750}
+.navlinks a:hover{color:white}
+.navright{display:flex;align-items:center;gap:12px}
+.nav-cta,.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:999px;padding:11px 18px;font-size:13px;font-weight:850;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.nav-cta,.btn-primary{color:white;background:linear-gradient(120deg,#f34b59,#aa1d3c);box-shadow:0 7px 24px #ed30402b;border:1px solid #ff7a7e44}
+.nav-cta:hover,.btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px #ed304044}
+.btn-secondary{background:#ffffff09;border:1px solid #ffffff26;color:#f4edf1}
+.menu-toggle{display:none;background:transparent;border:1px solid #ffffff22;color:white;border-radius:11px;padding:8px 11px}
+.hero{position:relative;padding:82px 0 76px;isolation:isolate;overflow:hidden}
+.hero:before{content:"";position:absolute;inset:0;z-index:-2;background:radial-gradient(ellipse at 78% 34%,#71202a66,transparent 42%),radial-gradient(ellipse at 5% 70%,#321a2a80,transparent 46%),linear-gradient(180deg,#100c13,#09090e 90%)}
+.hero:after{content:"";position:absolute;inset:0;z-index:-1;opacity:.12;background-image:linear-gradient(120deg,transparent 0 43%,#f14b5b 43.1%,transparent 43.35%),linear-gradient(155deg,transparent 0 67%,#ff835b 67.1%,transparent 67.3%);mask-image:linear-gradient(90deg,transparent,#000 35%,#000 90%,transparent)}
+.hero-grid{display:grid;grid-template-columns:.9fr 1.1fr;align-items:center;gap:54px}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;color:#ff9b87;text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:900}
+.eyebrow:before{content:"";width:24px;height:2px;background:var(--red);box-shadow:0 0 12px var(--red)}
+h1{font-size:clamp(42px,5.4vw,72px);letter-spacing:-.055em;line-height:.99;margin:21px 0 20px;font-weight:950}
+h1 em{font-style:normal;color:#f04a5e}
+.hero-copy{max-width:520px;font-size:17px;color:#d2c8d0;line-height:1.65}
+.hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.hero-meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:30px;color:#aa9ea8;font-size:11px;font-weight:750}
+.hero-meta span{display:flex;align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:100%;background:var(--green);box-shadow:0 0 12px #63d58a}
+.dashboard-frame{position:relative;padding:10px;border:1px solid #e94b6047;border-radius:22px;background:linear-gradient(145deg,#302029,#121017 65%);box-shadow:0 30px 90px #000a,0 0 60px #eb35421c;transform:perspective(1100px) rotateY(-5deg) rotateX(2deg)}
+.dashboard-frame:before{content:"";position:absolute;inset:-1px;border-radius:22px;pointer-events:none;background:linear-gradient(130deg,#ff8c6b55,transparent 34%,transparent 69%,#df304c44);mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;padding:1px}
+.screen{aspect-ratio:16/9;min-height:280px;overflow:hidden;border-radius:14px;background:#141118 url("assets/dashboard-background.svg") center/cover;position:relative;display:grid;grid-template-rows:38px 1fr 30px}
+.screen-top{display:flex;align-items:center;justify-content:space-between;padding:0 15px;background:#101014e8;border-bottom:1px solid #ffffff15;font-size:9px;font-weight:850;letter-spacing:.04em}
+.screen-logo{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:950;letter-spacing:.08em}
+.screen-logo img{width:20px;height:20px}
+.screen-state{display:flex;align-items:center;gap:13px;color:#f3eef0}
+.green{color:#70df93}
+.screen-body{display:grid;grid-template-columns:26% 74%;min-height:0}
+.screen-side{border-right:1px solid #e53e553d;background:#0d0d12da;padding:15px 9px;display:flex;flex-direction:column;gap:8px}
+.screen-nav{padding:8px 8px;border-radius:6px;font-size:10px;color:#eee8ec;font-weight:800;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.screen-nav.active{background:linear-gradient(90deg,#a62a40,#471b27);border-right:3px solid #fa4b61}
+.screen-nav i{font-style:normal;font-size:15px}
+.screen-side-brand{margin-top:auto;font-size:18px;font-weight:950;letter-spacing:.02em}
+.screen-side-brand span{color:var(--red)}
+.screen-main{padding:15px 16px;min-width:0}
+.screen-title{font-size:17px;font-weight:950;margin-bottom:7px}
+.screen-label{font-size:10px;color:#e9dfe5;margin:8px 0 6px;font-weight:850;letter-spacing:.05em}
+.screen-games{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.screen-game{height:76px;border-radius:7px;border:1px solid #e568623e;background:linear-gradient(135deg,#5b2631,#16151b);display:flex;align-items:end;padding:6px;background-size:cover;background-position:center;overflow:hidden}
+.screen-game span{background:#08080dc9;border-radius:4px;padding:3px 5px;font-size:8px;font-weight:850}
+.screen-favs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.screen-fav{height:79px;border-radius:7px;overflow:hidden;border:1px solid #e56a5544;background:#14131a;position:relative}
+.screen-fav img{width:100%;height:100%;object-fit:cover}
+.screen-footer{display:flex;justify-content:center;align-items:center;gap:18px;background:#111116ef;border-top:1px solid #ffffff1b;font-size:9px;font-weight:850}
+.key-a{color:#6cda89}.key-b{color:#ff6879}.key-x{color:#65b7ff}.key-y{color:#f2d260}
+.screen-chips{position:absolute;top:43px;right:10px;display:flex;gap:5px}
+.screen-chip{font-size:7px;color:#eee;background:#07070bc9;padding:4px 6px;border-radius:4px;border:1px solid #ffffff18}
+.screen-note{font-size:9px;color:#a99da6;margin-top:6px}
+section{padding:86px 0}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:30px;margin-bottom:34px}
+.kicker{font-size:11px;text-transform:uppercase;letter-spacing:.17em;color:#ff8a76;font-weight:900}
+h2{font-size:clamp(30px,4vw,47px);letter-spacing:-.045em;line-height:1.08;margin:10px 0 0;font-weight:950}
+.section-intro{color:var(--muted);max-width:480px;font-size:14px}
+.status-band{border-block:1px solid #ffffff12;background:#100e14}
+.status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:24px 0}
+.status-item{padding:7px 18px;border-left:1px solid #ffffff1a}
+.status-item:first-child{border:0;padding-left:0}
+.status-value{font-size:18px;font-weight:950}
+.status-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#a89da6;font-weight:800}
+.features{background:linear-gradient(180deg,#0b0a10,#100d14)}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feature{padding:24px;border:1px solid #ffffff16;border-radius:17px;background:linear-gradient(145deg,#1a161e,#100e14);min-height:205px;position:relative;overflow:hidden}
+.feature:after{content:"";position:absolute;width:130px;height:130px;border-radius:50%;right:-65px;bottom:-65px;background:#ef40531a;filter:blur(3px)}
+.feature-icon{width:43px;height:43px;border-radius:13px;display:grid;place-items:center;background:#ef40531a;border:1px solid #ef405344;color:#ff7c74;font-size:21px}
+.feature h3{font-size:17px;margin:17px 0 7px}
+.feature p{margin:0;color:#b8adb7;font-size:13px;max-width:320px}
+.showcase{background:#0d0c12}
+.gallery{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+.gallery-main,.gallery-side article{border:1px solid #ffffff16;border-radius:18px;overflow:hidden;background:#151219}
+.gallery-main{min-height:330px;display:grid;grid-template-rows:1fr auto}
+.gallery-main img{height:100%;width:100%;object-fit:cover;min-height:245px}
+.gallery-caption{padding:17px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.gallery-caption strong{font-size:15px}
+.gallery-caption span{font-size:11px;color:#ad9faa}
+.gallery-side{display:grid;grid-template-rows:1fr 1fr;gap:16px}
+.gallery-side article{display:grid;grid-template-columns:46% 54%;min-height:150px}
+.gallery-side img{height:100%;width:100%;object-fit:cover}
+.gallery-side .caption{padding:16px;align-self:center}
+.gallery-side h3{font-size:15px;margin:0 0 5px}
+.gallery-side p{font-size:12px;color:#b8adb7;margin:0}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center}
+.about-art{min-height:300px;border:1px solid #9c3744;border-radius:20px;background:linear-gradient(#08080c50,#08080caa),url("assets/wallpaper.svg") center/cover;display:flex;align-items:end;padding:24px;box-shadow:inset 0 0 90px #0008}
+.about-art strong{font-size:clamp(30px,4vw,48px);line-height:.95;letter-spacing:-.06em}
+.about-art strong span{color:var(--red)}
+.about-copy p{color:#c5bac3;font-size:14px}
+.about-copy ul{padding:0;list-style:none;display:grid;gap:11px;margin:23px 0}
+.about-copy li{display:flex;gap:10px;align-items:start;color:#e6dfe4;font-size:13px}
+.check{color:var(--green);font-weight:950}
+.downloads{background:radial-gradient(ellipse at 50% 100%,#5b182933,transparent 65%),#100d14;border-block:1px solid #ffffff0e}
+.download-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+.download-card{border:1px solid #e04b5b55;border-radius:20px;padding:28px;background:linear-gradient(145deg,#28151f,#111017 68%);box-shadow:0 18px 50px #0005}
+.download-card.secondary-card{border-color:#ffffff20;background:linear-gradient(145deg,#1b1821,#111017)}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pill{font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:900;padding:6px 10px;border-radius:999px;background:#ed405322;color:#ff9a91;border:1px solid #ed405355}
+.download-card h3{font-size:24px;margin:21px 0 8px}
+.download-card p{color:#c2b7c1;font-size:13px;margin:0 0 20px}
+.download-card ul{padding-left:18px;color:#c8bdc7;font-size:12px;line-height:1.8;margin-bottom:22px}
+.download-card .btn{width:100%}
+.warning{margin-top:18px;font-size:11px;color:#c6b8c1;border-left:3px solid #f0ad54;padding:7px 12px;background:#f0ad540d}
+.roadmap{background:#0c0b11}
+.roadmap-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+.road-card{border:1px solid #ffffff15;background:#15131a;border-radius:15px;padding:19px;min-height:150px}
+.road-card small{color:#ff9b84;font-weight:900;text-transform:uppercase;letter-spacing:.12em;font-size:9px}
+.road-card h3{font-size:16px;margin:12px 0 6px}
+.road-card p{color:#b4a9b3;font-size:12px;margin:0}
+.faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+details{border:1px solid #ffffff18;border-radius:13px;background:#141219;padding:17px 19px}
+summary{cursor:pointer;font-size:13px;font-weight:850}
+details p{font-size:12px;color:#b9aeb8;margin:12px 0 0}
+.community{padding:64px 0;background:linear-gradient(105deg,#401722,#171017 70%);border-top:1px solid #e94b5c33}
+.community-inner{display:flex;align-items:center;justify-content:space-between;gap:30px}
+.community h2{font-size:clamp(28px,4vw,40px);margin:0}
+.community p{color:#d1c1ca;margin:9px 0 0;font-size:13px}
+.community-actions{display:flex;gap:10px;flex-wrap:wrap}
+footer{border-top:1px solid #ffffff13;padding:28px 0;color:#958a95;font-size:11px}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;gap:22px;flex-wrap:wrap}
+.footer-brand{display:flex;align-items:center;gap:8px;color:#e8e0e5;font-weight:950;letter-spacing:.08em}
+.footer-brand img{width:25px;height:25px}
+.footer-links{display:flex;gap:18px;flex-wrap:wrap}
+.footer-links a:hover{color:#fff}
+@media(max-width:980px){.hero-grid{grid-template-columns:1fr;gap:44px}.hero-copy{max-width:680px}.dashboard-frame{max-width:840px;margin:auto;transform:none}.feature-grid{grid-template-columns:repeat(2,1fr)}.roadmap-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.wrap{width:min(var(--max),calc(100% - 30px))}.topbar{height:66px}.menu-toggle{display:block}.navlinks{display:none;position:absolute;top:65px;left:0;right:0;background:#0e0d13;border-bottom:1px solid #ffffff18;padding:18px 22px;flex-direction:column;align-items:stretch;gap:17px}.navlinks.open{display:flex}.nav-cta{display:none}.hero{padding:58px 0 54px}.hero-grid{gap:30px}h1{font-size:clamp(40px,12vw,58px)}.hero-copy{font-size:15px}.dashboard-frame{padding:5px;border-radius:14px}.screen{min-height:210px}.screen-top{height:28px;padding:0 8px;font-size:7px}.screen-logo{font-size:9px}.screen-logo img{width:15px;height:15px}.screen-state{gap:6px;font-size:7px}.screen-body{grid-template-columns:25% 75%}.screen-side{padding:8px 4px;gap:4px}.screen-nav{padding:6px 4px;font-size:7px;gap:4px}.screen-nav i{font-size:10px}.screen-side-brand{font-size:11px}.screen-main{padding:8px}.screen-title{font-size:11px;margin-bottom:4px}.screen-label{font-size:7px;margin:5px 0 4px}.screen-games{gap:4px}.screen-game{height:45px;padding:3px}.screen-game span{font-size:6px;padding:2px}.screen-favs{gap:4px}.screen-fav{height:48px}.screen-footer{font-size:6px;gap:7px}.screen-chips{top:31px;right:4px;gap:2px}.screen-chip{font-size:5px;padding:2px 3px}.screen-note{font-size:6px}.hero-meta{gap:12px;font-size:9px}.section-head{display:block;margin-bottom:25px}section{padding:62px 0}.section-intro{margin-top:13px}.status-grid{grid-template-columns:repeat(2,1fr);gap:14px}.status-item{padding:6px 10px}.status-item:nth-child(odd){border-left:0;padding-left:0}.feature-grid{grid-template-columns:1fr}.feature{min-height:unset;padding:20px}.gallery{grid-template-columns:1fr}.gallery-side{grid-template-rows:auto}.gallery-side article{min-height:125px}.about-grid{grid-template-columns:1fr}.about-art{min-height:220px}.download-grid{grid-template-columns:1fr}.roadmap-grid{grid-template-columns:1fr 1fr}.faq-grid{grid-template-columns:1fr}.community-inner{display:block}.community-actions{margin-top:22px}.community-actions .btn{flex:1}.footer-inner{display:block}.footer-links{margin-top:16px}}
+@media(max-width:400px){.roadmap-grid{grid-template-columns:1fr}.screen-chip:last-child{display:none}.screen-note{display:none}.hero-actions .btn{width:100%}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
 </style>
 </head>
-<body><main class="wrap">
-<header><div class="logo">VULKAN<span>OS</span> FLAP</div><div class="tag">SECRET ARCADE • SEU HARDWARE É FRACO. SUA PRÓXIMA ERA, NÃO.</div></header>
-<section class="card"><div class="game-shell">
-<canvas id="game" width="420" height="620" aria-label="VulkanOS Flap. Pressione espaço, seta para cima ou toque para voar."></canvas>
-<div class="hud"><div class="pill">🌋 VULKAN FLAP</div><div class="pill">🏆 <span id="score">0</span> • BEST <span id="best">0</span></div></div>
-<div class="overlay" id="overlay"><div class="overlay-box"><h2 id="overlayTitle">🔥 Pronto para voar?</h2><p id="overlayText">Toque, clique ou pressione <b>ESPAÇO</b> para impulsionar o pássaro vulcânico e atravessar os portais de lava.</p><button id="startBtn">JOGAR AGORA</button></div></div>
+<body>
+<header class="topbar">
+  <div class="wrap nav">
+    <a class="brand" href="#" aria-label="VulkanOS início"><img src="assets/vulkanos-mark.svg" alt=""><span>VULKAN</span>OS</a>
+    <nav class="navlinks" id="navlinks" aria-label="Navegação principal">
+      <a href="#visao">Visão geral</a><a href="#recursos">Recursos</a><a href="#interface">Interface</a><a href="#download">Download</a><a href="#roadmap">Roadmap</a>
+    </nav>
+    <div class="navright"><a class="nav-cta" href="#download">Experimentar a Alpha <span>↗</span></a><button class="menu-toggle" id="menuToggle" aria-label="Abrir menu" aria-expanded="false">☰</button></div>
+  </div>
+</header>
+
+<main>
+<section class="hero" id="visao">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">VulkanOS PC Edition · Alpha</div>
+      <h1>Seu PC.<br>Sua biblioteca.<br><em>Sua próxima era.</em></h1>
+      <p class="hero-copy">Uma experiência Linux em desenvolvimento, pensada para reunir jogos de PC, emulação e seus aplicativos em uma interface com espírito de console.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#download">Conhecer a Alpha <span>↗</span></a>
+        <a class="btn btn-secondary" href="https://github.com/enzolas140-ai/vulkanos-flap" target="_blank" rel="noopener">Ver no GitHub</a>
+      </div>
+      <div class="hero-meta"><span><i class="dot"></i> Build da interface concluída</span><span>PC x86-64 · Debian 13</span><span>Projeto experimental</span></div>
+    </div>
+    <div class="dashboard-frame" aria-label="Prévia ilustrativa da interface VulkanOS">
+      <div class="screen">
+        <div class="screen-top">
+          <div class="screen-logo"><img src="assets/vulkanos-mark.svg" alt=""> VULKAN</div>
+          <div class="screen-state"><span class="green">▰ 100%</span><span>◉ WI-FI</span><span>18:30</span></div>
+        </div>
+        <div class="screen-body">
+          <aside class="screen-side">
+            <div class="screen-nav active"><i>▦</i> BIBLIOTECA</div>
+            <div class="screen-nav"><i>🎮</i> EMULADORES</div>
+            <div class="screen-nav"><i>◎</i> NAVEGADOR</div>
+            <div class="screen-nav"><i>◉</i> STEAM</div>
+            <div class="screen-nav"><i>⚙</i> CONFIGURAÇÕES</div>
+            <div class="screen-nav"><i>ⓘ</i> SOBRE</div>
+            <div class="screen-side-brand">VULKAN<span>OS</span></div>
+          </aside>
+          <div class="screen-main">
+            <div class="screen-title">BIBLIOTECA</div>
+            <div class="screen-label">JOGOS INSTALADOS</div>
+            <div class="screen-games">
+              <div class="screen-game" style="background-image:linear-gradient(0deg,#100c12bb,transparent),linear-gradient(130deg,#e7b834,#842b36)"><span>STEAM · JOGOS</span></div>
+              <div class="screen-game" style="background-image:linear-gradient(0deg,#100c12bb,transparent),url('assets/wallpaper.svg')"><span>STEAM</span></div>
+              <div class="screen-game" style="background-image:linear-gradient(0deg,#100c12bb,transparent),linear-gradient(130deg,#32445c,#141821)"><span>BIBLIOTECA</span></div>
+            </div>
+            <div class="screen-label">FAVORITOS</div>
+            <div class="screen-favs">
+              <div class="screen-fav"><img src="assets/cards/snes.svg" alt="Arte de Super Nintendo"></div>
+              <div class="screen-fav"><img src="assets/cards/megadrive.svg" alt="Arte de Mega Drive"></div>
+              <div class="screen-fav"><img src="assets/cards/retroarch.svg" alt="Arte RetroArch"></div>
+            </div>
+            <div class="screen-note">Prévia ilustrativa do layout — conteúdo real depende dos jogos instalados.</div>
+          </div>
+        </div>
+        <div class="screen-footer"><span class="key-a">Ⓐ</span> SELECIONAR <span class="key-b">Ⓑ</span> VOLTAR <span class="key-x">ⓧ</span> DETALHES <span class="key-y">Ⓨ</span> PESQUISAR <span>START MENU</span></div>
+      </div>
+      <div class="screen-chips"><span class="screen-chip">REDE</span><span class="screen-chip">CONTROLE</span><span class="screen-chip">BLUETOOTH</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="status-band">
+  <div class="wrap status-grid">
+    <div class="status-item"><div class="status-value">Debian 13</div><div class="status-label">Base atual</div></div>
+    <div class="status-item"><div class="status-value">XFCE</div><div class="status-label">Ambiente desktop</div></div>
+    <div class="status-item"><div class="status-value">x86-64</div><div class="status-label">Arquitetura alvo</div></div>
+    <div class="status-item"><div class="status-value">Alpha</div><div class="status-label">Estágio do projeto</div></div>
+  </div>
 </div>
-<div class="controls"><button id="flapBtn">🪽 VOAR</button><button id="restartBtn" class="secondary">↻ Reiniciar</button><button id="shareBtn" class="secondary">↗ Compartilhar</button></div>
-<p class="help">PC: <b>ESPAÇO</b> ou <b>↑</b> • Celular: toque na tela ou em VOAR<br>Desvie dos pilares, some pontos e supere seu recorde!</p>
-</section><footer>Um easter egg da comunidade <strong>VulkanOS</strong> • Jogue, explore, personalize e evolua.</footer>
+
+<section class="features" id="recursos">
+  <div class="wrap">
+    <div class="section-head">
+      <div><div class="kicker">O que estamos construindo</div><h2>Um lugar para seus jogos.</h2></div>
+      <p class="section-intro">A proposta é simples: iniciar o PC em uma interface clara, acessar a biblioteca e abrir as ferramentas de jogos sem perder a flexibilidade de um sistema desktop.</p>
+    </div>
+    <div class="feature-grid">
+      <article class="feature"><div class="feature-icon">▦</div><h3>Biblioteca visual</h3><p>Uma tela inicial com cartões, favoritos e jogos recentes. A lista é preenchida com os jogos Steam e ROMs encontrados no dispositivo.</p></article>
+      <article class="feature"><div class="feature-icon">◉</div><h3>Steam e jogos de PC</h3><p>Atalho para o cliente Steam, incluindo modo de interface para controle. A configuração inicial do Steam exige internet.</p></article>
+      <article class="feature"><div class="feature-icon">🎮</div><h3>Emulação</h3><p>RetroArch, cores Libretro e ES-DE para organizar jogos clássicos nas pastas do usuário. Nenhuma ROM ou BIOS vem incluída.</p></article>
+      <article class="feature"><div class="feature-icon">🌐</div><h3>Navegador e aplicativos</h3><p>Firefox ESR e acesso ao ambiente desktop XFCE para tarefas fora da biblioteca de jogos.</p></article>
+      <article class="feature"><div class="feature-icon">⌁</div><h3>Dispositivos</h3><p>Indicadores de rede, Bluetooth, bateria e dispositivos joystick disponíveis no Linux. O suporte varia conforme o hardware.</p></article>
+      <article class="feature"><div class="feature-icon">⚙</div><h3>Personalização</h3><p>Uma base para evoluir o tema, as pastas e a experiência do VulkanOS. O foco atual é validar a interface e o boot em PCs reais.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="showcase" id="interface">
+  <div class="wrap">
+    <div class="section-head">
+      <div><div class="kicker">Identidade visual</div><h2>Uma interface com personalidade.</h2></div>
+      <p class="section-intro">Tema escuro, vermelho vulcânico, cartões largos e uma navegação pensada para funcionar bem em tela grande.</p>
+    </div>
+    <div class="gallery">
+      <article class="gallery-main">
+        <img src="assets/dashboard-background.svg" alt="Arte de fundo original do dashboard VulkanOS">
+        <div class="gallery-caption"><strong>Dashboard VulkanOS</strong><span>Fundo visual do ambiente PC</span></div>
+      </article>
+      <div class="gallery-side">
+        <article><img src="assets/cards/snes.svg" alt="Arte original VulkanOS para Super Nintendo"><div class="caption"><h3>Biblioteca retro</h3><p>Cartões dedicados para sistemas clássicos.</p></div></article>
+        <article><img src="assets/cards/retroarch.svg" alt="Arte original VulkanOS para RetroArch"><div class="caption"><h3>Centro de emulação</h3><p>Atalho para o RetroArch e seus cores instalados.</p></div></article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="sobre">
+  <div class="wrap about-grid">
+    <div class="about-art"><strong>VULKAN<br><span>OS</span><br>PC EDITION</strong></div>
+    <div class="about-copy">
+      <div class="kicker">Transparência da Alpha</div>
+      <h2>Uma base real, sem promessas falsas.</h2>
+      <p>A edição PC atual é, honestamente, um Debian 13 (Trixie) enxuto e personalizado com XFCE, componentes de jogos e o dashboard VulkanOS em fase experimental. É o começo do projeto, não um sistema independente concluído.</p>
+      <ul>
+        <li><span class="check">✓</span> A interface GTK inicia no teste automatizado em 1280×720.</li>
+        <li><span class="check">✓</span> A build da ISO foi concluída com sucesso no GitHub Actions.</li>
+        <li><span class="check">✓</span> A imagem de teste é para PCs amd64; não é destinada a handhelds ARM.</li>
+        <li><span class="check">!</span> Ainda precisa de testes físicos de vídeo, áudio, Wi-Fi, controles e instalação.</li>
+      </ul>
+      <a class="btn btn-secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/tree/main/pc-edition" target="_blank" rel="noopener">Ler detalhes técnicos da edição PC ↗</a>
+    </div>
+  </div>
+</section>
+
+<section class="downloads" id="download">
+  <div class="wrap">
+    <div class="section-head">
+      <div><div class="kicker">Experimente e acompanhe</div><h2>Entre na próxima fase.</h2></div>
+      <p class="section-intro">A build mais recente com o dashboard está disponível como artefato do GitHub Actions. Leia as instruções antes de gravar a imagem.</p>
+    </div>
+    <div class="download-grid">
+      <article class="download-card">
+        <div class="card-top"><span class="pill">Build mais recente · dashboard</span><span>🌋</span></div>
+        <h3>VulkanOS PC Alpha</h3>
+        <p>Imagem amd64 com a nova interface de biblioteca e prévia visual gerada durante a compilação.</p>
+        <ul><li>ISO híbrida para teste em PC</li><li>Checksum SHA-256 no artefato</li><li>Captura de prévia da interface 1280×720</li></ul>
+        <a class="btn btn-primary" href="https://github.com/enzolas140-ai/vulkanos-flap/actions/runs/45919988737" target="_blank" rel="noopener">Abrir build e baixar artefato ↗</a>
+        <div class="warning">Teste primeiro em modo Live e use um pendrive separado. Não instale em discos com dados importantes sem backup. A compatibilidade física ainda não foi validada em vários PCs.</div>
+      </article>
+      <article class="download-card secondary-card">
+        <div class="card-top"><span class="pill">Release anterior</span><span>v0.1.0-alpha.1</span></div>
+        <h3>Primeira Alpha licenciada</h3>
+        <p>Esta é a versão pública inicial, anterior ao dashboard mostrado nesta página. Está preservada como referência.</p>
+        <ul><li>Permite testes e compartilhamento da cópia original conforme a licença personalizada</li><li>Inclui fontes e texto da licença</li><li>Não contém a nova interface</li></ul>
+        <a class="btn btn-secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/tag/v0.1.0-alpha.1" target="_blank" rel="noopener">Abrir release original ↗</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="roadmap" id="roadmap">
+  <div class="wrap">
+    <div class="section-head">
+      <div><div class="kicker">O que vem depois</div><h2>O caminho à frente.</h2></div>
+      <p class="section-intro">Estes itens fazem parte dos planos do VulkanOS, mas ainda não estão implementados na Alpha atual.</p>
+    </div>
+    <div class="roadmap-grid">
+      <article class="road-card"><small>Planejado</small><h3>BOOT + VKROMS</h3><p>Assistente de discos e organização da biblioteca em armazenamento separado.</p></article>
+      <article class="road-card"><small>Planejado</small><h3>Modo RUNVK</h3><p>Modo desktop completo com gerenciamento de aplicativos e disco de jogos.</p></article>
+      <article class="road-card"><small>Em evolução</small><h3>Controles</h3><p>Melhorar detecção, navegação, mapeamento e compatibilidade entre dispositivos.</p></article>
+      <article class="road-card"><small>Visão futura</small><h3>Vulkan ONE</h3><p>Levar a identidade e a experiência do projeto ao console próprio.</p></article>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="section-head"><div><div class="kicker">Perguntas frequentes</div><h2>Antes de testar.</h2></div></div>
+    <div class="faq-grid">
+      <details><summary>O VulkanOS já é um sistema independente?</summary><p>Ainda não. A Alpha atual é baseada em Debian 13 Trixie com XFCE, ferramentas de jogos e a interface experimental do VulkanOS.</p></details>
+      <details><summary>Funciona em R36S, TrimUI ou outros portáteis ARM?</summary><p>Não. Esta edição é para PCs x86-64 (amd64). Não é uma build ARM para consoles portáteis.</p></details>
+      <details><summary>Os jogos vêm instalados?</summary><p>Não. Steam, emuladores e pastas são fornecidos, mas jogos, ROMs e BIOS não são distribuídos. Use apenas conteúdo que você tem direito de utilizar.</p></details>
+      <details><summary>Posso instalar direto no meu HD?</summary><p>Teste primeiro a sessão Live. A instalação pode apagar dados no disco escolhido; faça backup e confira com cuidado o destino. O assistente BOOT/VKROMS ainda não existe.</p></details>
+      <details><summary>Os controles funcionam automaticamente?</summary><p>Há navegação básica por teclado e dispositivos joystick reconhecidos pelo Linux. O suporte universal e o mapeamento automático não estão implementados.</p></details>
+      <details><summary>Como ajudar o projeto?</summary><p>Teste a versão Live em hardware que você possa usar para testes e envie modelo do PC, CPU, GPU, resultado de boot e problemas de rede, som e controles pelo repositório.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="community">
+  <div class="wrap community-inner">
+    <div><h2>O VulkanOS está evoluindo.</h2><p>Acompanhe o código, os testes e as próximas versões diretamente no GitHub.</p></div>
+    <div class="community-actions"><a class="btn btn-primary" href="https://github.com/enzolas140-ai/vulkanos-flap" target="_blank" rel="noopener">Acompanhar no GitHub ↗</a><a class="btn btn-secondary" href="flap/">Jogar VulkanOS Flap ↗</a></div>
+  </div>
+</section>
 </main>
+
+<footer>
+  <div class="wrap footer-inner">
+    <div class="footer-brand"><img src="assets/vulkanos-mark.svg" alt=""> VULKANOS</div>
+    <div>Projeto experimental • PC Edition Alpha • x86-64</div>
+    <nav class="footer-links" aria-label="Links do rodapé"><a href="https://github.com/enzolas140-ai/vulkanos-flap" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/enzolas140-ai/vulkanos-flap/tree/main/pc-edition" target="_blank" rel="noopener">Código PC</a><a href="LICENSE-ALPHA-0.1.txt">Licença Alpha original</a><a href="flap/">VulkanOS Flap</a></nav>
+  </div>
+</footer>
 <script>
 (function(){
-"use strict";
-const canvas=document.getElementById("game"),ctx=canvas.getContext("2d"),W=420,H=620,ground=568;
-const scoreEl=document.getElementById("score"),bestEl=document.getElementById("best"),overlay=document.getElementById("overlay"),title=document.getElementById("overlayTitle"),copy=document.getElementById("overlayText"),startBtn=document.getElementById("startBtn");
-const flapBtn=document.getElementById("flapBtn"),restartBtn=document.getElementById("restartBtn"),shareBtn=document.getElementById("shareBtn");
-let state="ready",bird,pipes,score,lastTime=0,best=0,particles=[];
-try{best=Number(localStorage.getItem("vulkanos-flap-best")||0)||0}catch(e){}
-bestEl.textContent=best;
-function reset(){bird={x:112,y:270,vy:0};pipes=[];score=0;particles=[];scoreEl.textContent="0";for(let i=0;i<3;i++)pipes.push(makePipe(500+i*235))}
-function makePipe(x){return{x:x,top:100+Math.random()*240,gap:166,passed:false}}
-function flap(){if(state==="ready"){state="playing";overlay.classList.add("hidden")}else if(state==="over"){reset();state="playing";overlay.classList.add("hidden")}if(state!=="playing")return;bird.vy=-430;for(let i=0;i<5;i++)particles.push({x:bird.x-13,y:bird.y+6,vx:-30-Math.random()*70,vy:(Math.random()-.5)*80,life:.35})}
-function endGame(){if(state!=="playing")return;state="over";if(score>best){best=score;bestEl.textContent=best;try{localStorage.setItem("vulkanos-flap-best",String(best))}catch(e){}}
-title.textContent="💥 Fim de voo!";copy.innerHTML="Você fez <b>"+score+"</b> ponto(s). Recorde neste dispositivo: <b>"+best+"</b>.<br>Mais uma tentativa?";startBtn.textContent="JOGAR DE NOVO";overlay.classList.remove("hidden")}
-function background(t){let g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,"#101e42");g.addColorStop(.58,"#381d3b");g.addColorStop(1,"#f05c36");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-ctx.fillStyle="#fff";for(let i=0;i<28;i++){let x=(i*83+Math.sin(i*7)*16)%W,y=(i*47)%310;ctx.globalAlpha=.25+(Math.sin(t/800+i)*.15);ctx.fillRect(x,y,2,2)}ctx.globalAlpha=1;
-ctx.fillStyle="#ffb04b";ctx.beginPath();ctx.arc(328,114,42,0,Math.PI*2);ctx.fill();ctx.fillStyle="#ffdb99";ctx.beginPath();ctx.arc(315,104,32,0,Math.PI*2);ctx.fill();
-ctx.fillStyle="#24152d";ctx.beginPath();ctx.moveTo(0,390);ctx.lineTo(76,268);ctx.lineTo(121,345);ctx.lineTo(198,222);ctx.lineTo(273,358);ctx.lineTo(350,249);ctx.lineTo(420,370);ctx.lineTo(420,ground);ctx.lineTo(0,ground);ctx.fill();
-ctx.fillStyle="#511c2a";ctx.beginPath();ctx.moveTo(0,465);ctx.lineTo(82,370);ctx.lineTo(156,443);ctx.lineTo(247,346);ctx.lineTo(328,448);ctx.lineTo(420,360);ctx.lineTo(420,ground);ctx.lineTo(0,ground);ctx.fill();
-ctx.strokeStyle="#ff5a32";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,492);ctx.bezierCurveTo(90,448,130,520,220,476);ctx.bezierCurveTo(300,438,345,515,420,468);ctx.stroke()}
-function pipe(p){let x=p.x,top=p.top,bottom=top+p.gap,grad=ctx.createLinearGradient(x,0,x+66,0);grad.addColorStop(0,"#15794b");grad.addColorStop(.32,"#63e16e");grad.addColorStop(.65,"#188b52");grad.addColorStop(1,"#0b4d3b");ctx.fillStyle=grad;ctx.strokeStyle="#092f2c";ctx.lineWidth=5;
-ctx.fillRect(x,0,62,top-24);ctx.strokeRect(x,0,62,top-24);ctx.fillRect(x-7,top-28,76,28);ctx.strokeRect(x-7,top-28,76,28);ctx.fillRect(x,bottom+24,62,ground-bottom-24);ctx.strokeRect(x,bottom+24,62,ground-bottom-24);ctx.fillRect(x-7,bottom,76,28);ctx.strokeRect(x-7,bottom,76,28);ctx.fillStyle="#b6ff9b";ctx.fillRect(x+11,0,7,Math.max(0,top-35));ctx.fillRect(x+11,bottom+35,7,Math.max(0,ground-bottom-59))}
-function birdDraw(){ctx.save();ctx.translate(bird.x,bird.y);ctx.rotate(Math.max(-.45,Math.min(.8,bird.vy/700)));ctx.shadowColor="#ff542d";ctx.shadowBlur=18;ctx.fillStyle="#ffd447";ctx.strokeStyle="#421b28";ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(0,0,19,15,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle="#ff8b29";ctx.beginPath();ctx.moveTo(13,1);ctx.lineTo(31,7);ctx.lineTo(13,11);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(7,-8,7,0,Math.PI*2);ctx.fill();ctx.fillStyle="#14121a";ctx.beginPath();ctx.arc(10,-8,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#ed472d";ctx.beginPath();ctx.ellipse(-7,6,8,5,-.5,0,Math.PI*2);ctx.fill();ctx.restore()}
-function draw(t){background(t);pipes.forEach(pipe);ctx.fillStyle="#21101e";ctx.fillRect(0,ground,W,H-ground);ctx.fillStyle="#e64c32";ctx.fillRect(0,ground,W,7);ctx.fillStyle="#ffb347";for(let x=0;x<W;x+=34)ctx.fillRect(x,ground+16,19,3);particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life*2);ctx.fillStyle="#ffb13d";ctx.fillRect(p.x,p.y,4,4)});ctx.globalAlpha=1;birdDraw();if(state==="ready"){ctx.fillStyle="#fff";ctx.font="900 18px system-ui";ctx.textAlign="center";ctx.fillText("TOQUE PARA COMEÇAR",W/2,455)}}
-function tick(ts){if(!lastTime)lastTime=ts;let dt=Math.min((ts-lastTime)/1000,.035);lastTime=ts;if(state==="playing"){bird.vy+=1300*dt;bird.y+=bird.vy*dt;pipes.forEach(p=>p.x-=175*dt);if(pipes.length&&pipes[0].x<-90)pipes.shift();if(pipes[pipes.length-1].x<260)pipes.push(makePipe(500));pipes.forEach(p=>{if(!p.passed&&p.x+62<bird.x){p.passed=true;score++;scoreEl.textContent=score}if(bird.x+14>p.x-7&&bird.x-14<p.x+69&&(bird.y-12<p.top-28||bird.y+12>p.top+p.gap))endGame()});if(bird.y>ground-12||bird.y<12)endGame();particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt});particles=particles.filter(p=>p.life>0)}draw(ts);requestAnimationFrame(tick)}
-function action(e){if(e)e.preventDefault();flap()}
-function showReady(){reset();state="ready";title.textContent="🔥 Pronto para voar?";copy.innerHTML="Toque, clique ou pressione <b>ESPAÇO</b> para impulsionar o pássaro vulcânico e atravessar os portais de lava.";startBtn.textContent="JOGAR AGORA";overlay.classList.remove("hidden")}
-canvas.addEventListener("pointerdown",action);flapBtn.addEventListener("click",action);startBtn.addEventListener("click",flap);restartBtn.addEventListener("click",showReady);
-window.addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="ArrowUp"||e.code==="KeyW"){e.preventDefault();action(e)}});
-shareBtn.addEventListener("click",async()=>{let msg="Fiz "+score+" ponto(s) no VulkanOS Flap! Consegue superar?";try{if(navigator.share)await navigator.share({title:"VulkanOS Flap",text:msg,url:location.href});else if(navigator.clipboard){await navigator.clipboard.writeText(msg+" "+location.href);shareBtn.textContent="✓ Copiado!";setTimeout(()=>shareBtn.textContent="↗ Compartilhar",1500)}}catch(e){}});
-reset();requestAnimationFrame(tick);
+  const toggle=document.getElementById("menuToggle");
+  const links=document.getElementById("navlinks");
+  toggle.addEventListener("click",function(){
+    const open=links.classList.toggle("open");
+    toggle.setAttribute("aria-expanded",String(open));
+    toggle.textContent=open?"✕":"☰";
+  });
+  links.querySelectorAll("a").forEach(function(link){
+    link.addEventListener("click",function(){
+      links.classList.remove("open");
+      toggle.setAttribute("aria-expanded","false");
+      toggle.textContent="☰";
+    });
+  });
 })();
-</script></body></html>
+</script>
+</body>
+</html>

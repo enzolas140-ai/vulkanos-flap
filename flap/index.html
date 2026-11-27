@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#100b12"><meta name="description" content="VulkanOS Flap — mini game arcade vulcânico.">
+<title>VulkanOS Flap — Secret Arcade</title>
+<style>
+:root{color-scheme:dark;--red:#ff3b32;--orange:#ff8a28}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -10%,#4b1821 0,#160d17 45%,#08080d 100%);color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:18px}
+.wrap{width:min(100%,760px)}
+header{text-align:center;margin:0 auto 16px}
+.logo{font-size:clamp(26px,5vw,44px);font-weight:1000;letter-spacing:.04em;text-shadow:0 3px 0 #57131a,0 0 24px #ff382b66}
+.logo span{color:var(--red)}
+.tag{margin-top:2px;color:#f5c7bd;font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:12px}
+.card{background:linear-gradient(145deg,#211622,#100e16 70%);border:1px solid #7d2938;border-radius:24px;box-shadow:0 18px 70px #0009,0 0 38px #ef342022;padding:14px}
+.game-shell{position:relative;overflow:hidden;border-radius:16px;background:#101c39;max-width:520px;margin:auto;border:1px solid #ff623e55;touch-action:manipulation}
+canvas{display:block;width:100%;height:auto;aspect-ratio:420/620;touch-action:manipulation}
+.hud{position:absolute;inset:12px 12px auto;display:flex;justify-content:space-between;pointer-events:none;gap:8px}
+.pill{background:#090a13bb;border:1px solid #ffffff26;border-radius:999px;padding:7px 12px;font-weight:900;text-shadow:0 2px 4px #000}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(#070a1644,#070711aa)}
+.overlay.hidden{display:none}
+.overlay-box{max-width:340px;background:#130f1de8;border:1px solid #ff573d88;border-radius:20px;padding:22px;box-shadow:0 10px 50px #0009}
+.overlay h2{margin:0 0 8px;font-size:28px}.overlay p{margin:6px 0 16px;color:#e0d6df;line-height:1.45}
+button{border:0;cursor:pointer;font:inherit;font-weight:900;color:white;background:linear-gradient(135deg,#ff3c31,#c81732);border-radius:14px;padding:13px 22px;box-shadow:0 6px 0 #761528,0 0 22px #fa3c3544}
+button:active{transform:translateY(3px);box-shadow:0 3px 0 #761528}button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.help{text-align:center;color:#e4d8e2;margin:14px auto 0;font-size:13px;line-height:1.5}
+.controls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:14px auto 0}
+.controls button.secondary{background:#292332;box-shadow:0 5px 0 #100c16;border:1px solid #594458}
+footer{text-align:center;color:#9e91a0;font-size:12px;margin:17px 0 0}footer strong{color:#ff7660}
+@media(max-width:540px){body{padding:9px}.card{padding:8px;border-radius:18px}.help{font-size:12px}.overlay-box{padding:16px}.overlay h2{font-size:23px}}
+</style>
+</head>
+<body><main class="wrap">
+<header><div class="logo">VULKAN<span>OS</span> FLAP</div><div class="tag">SECRET ARCADE • SEU HARDWARE É FRACO. SUA PRÓXIMA ERA, NÃO.</div></header>
+<section class="card"><div class="game-shell">
+<canvas id="game" width="420" height="620" aria-label="VulkanOS Flap. Pressione espaço, seta para cima ou toque para voar."></canvas>
+<div class="hud"><div class="pill">🌋 VULKAN FLAP</div><div class="pill">🏆 <span id="score">0</span> • BEST <span id="best">0</span></div></div>
+<div class="overlay" id="overlay"><div class="overlay-box"><h2 id="overlayTitle">🔥 Pronto para voar?</h2><p id="overlayText">Toque, clique ou pressione <b>ESPAÇO</b> para impulsionar o pássaro vulcânico e atravessar os portais de lava.</p><button id="startBtn">JOGAR AGORA</button></div></div>
+</div>
+<div class="controls"><button id="flapBtn">🪽 VOAR</button><button id="restartBtn" class="secondary">↻ Reiniciar</button><button id="shareBtn" class="secondary">↗ Compartilhar</button></div>
+<p class="help">PC: <b>ESPAÇO</b> ou <b>↑</b> • Celular: toque na tela ou em VOAR<br>Desvie dos pilares, some pontos e supere seu recorde!</p>
+</section><footer>Um easter egg da comunidade <strong>VulkanOS</strong> • Jogue, explore, personalize e evolua.</footer>
+</main>
+<script>
+(function(){
+"use strict";
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d"),W=420,H=620,ground=568;
+const scoreEl=document.getElementById("score"),bestEl=document.getElementById("best"),overlay=document.getElementById("overlay"),title=document.getElementById("overlayTitle"),copy=document.getElementById("overlayText"),startBtn=document.getElementById("startBtn");
+const flapBtn=document.getElementById("flapBtn"),restartBtn=document.getElementById("restartBtn"),shareBtn=document.getElementById("shareBtn");
+let state="ready",bird,pipes,score,lastTime=0,best=0,particles=[];
+try{best=Number(localStorage.getItem("vulkanos-flap-best")||0)||0}catch(e){}
+bestEl.textContent=best;
+function reset(){bird={x:112,y:270,vy:0};pipes=[];score=0;particles=[];scoreEl.textContent="0";for(let i=0;i<3;i++)pipes.push(makePipe(500+i*235))}
+function makePipe(x){return{x:x,top:100+Math.random()*240,gap:166,passed:false}}
+function flap(){if(state==="ready"){state="playing";overlay.classList.add("hidden")}else if(state==="over"){reset();state="playing";overlay.classList.add("hidden")}if(state!=="playing")return;bird.vy=-430;for(let i=0;i<5;i++)particles.push({x:bird.x-13,y:bird.y+6,vx:-30-Math.random()*70,vy:(Math.random()-.5)*80,life:.35})}
+function endGame(){if(state!=="playing")return;state="over";if(score>best){best=score;bestEl.textContent=best;try{localStorage.setItem("vulkanos-flap-best",String(best))}catch(e){}}
+title.textContent="💥 Fim de voo!";copy.innerHTML="Você fez <b>"+score+"</b> ponto(s). Recorde neste dispositivo: <b>"+best+"</b>.<br>Mais uma tentativa?";startBtn.textContent="JOGAR DE NOVO";overlay.classList.remove("hidden")}
+function background(t){let g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,"#101e42");g.addColorStop(.58,"#381d3b");g.addColorStop(1,"#f05c36");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ctx.fillStyle="#fff";for(let i=0;i<28;i++){let x=(i*83+Math.sin(i*7)*16)%W,y=(i*47)%310;ctx.globalAlpha=.25+(Math.sin(t/800+i)*.15);ctx.fillRect(x,y,2,2)}ctx.globalAlpha=1;
+ctx.fillStyle="#ffb04b";ctx.beginPath();ctx.arc(328,114,42,0,Math.PI*2);ctx.fill();ctx.fillStyle="#ffdb99";ctx.beginPath();ctx.arc(315,104,32,0,Math.PI*2);ctx.fill();
+ctx.fillStyle="#24152d";ctx.beginPath();ctx.moveTo(0,390);ctx.lineTo(76,268);ctx.lineTo(121,345);ctx.lineTo(198,222);ctx.lineTo(273,358);ctx.lineTo(350,249);ctx.lineTo(420,370);ctx.lineTo(420,ground);ctx.lineTo(0,ground);ctx.fill();
+ctx.fillStyle="#511c2a";ctx.beginPath();ctx.moveTo(0,465);ctx.lineTo(82,370);ctx.lineTo(156,443);ctx.lineTo(247,346);ctx.lineTo(328,448);ctx.lineTo(420,360);ctx.lineTo(420,ground);ctx.lineTo(0,ground);ctx.fill();
+ctx.strokeStyle="#ff5a32";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,492);ctx.bezierCurveTo(90,448,130,520,220,476);ctx.bezierCurveTo(300,438,345,515,420,468);ctx.stroke()}
+function pipe(p){let x=p.x,top=p.top,bottom=top+p.gap,grad=ctx.createLinearGradient(x,0,x+66,0);grad.addColorStop(0,"#15794b");grad.addColorStop(.32,"#63e16e");grad.addColorStop(.65,"#188b52");grad.addColorStop(1,"#0b4d3b");ctx.fillStyle=grad;ctx.strokeStyle="#092f2c";ctx.lineWidth=5;
+ctx.fillRect(x,0,62,top-24);ctx.strokeRect(x,0,62,top-24);ctx.fillRect(x-7,top-28,76,28);ctx.strokeRect(x-7,top-28,76,28);ctx.fillRect(x,bottom+24,62,ground-bottom-24);ctx.strokeRect(x,bottom+24,62,ground-bottom-24);ctx.fillRect(x-7,bottom,76,28);ctx.strokeRect(x-7,bottom,76,28);ctx.fillStyle="#b6ff9b";ctx.fillRect(x+11,0,7,Math.max(0,top-35));ctx.fillRect(x+11,bottom+35,7,Math.max(0,ground-bottom-59))}
+function birdDraw(){ctx.save();ctx.translate(bird.x,bird.y);ctx.rotate(Math.max(-.45,Math.min(.8,bird.vy/700)));ctx.shadowColor="#ff542d";ctx.shadowBlur=18;ctx.fillStyle="#ffd447";ctx.strokeStyle="#421b28";ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(0,0,19,15,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle="#ff8b29";ctx.beginPath();ctx.moveTo(13,1);ctx.lineTo(31,7);ctx.lineTo(13,11);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(7,-8,7,0,Math.PI*2);ctx.fill();ctx.fillStyle="#14121a";ctx.beginPath();ctx.arc(10,-8,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#ed472d";ctx.beginPath();ctx.ellipse(-7,6,8,5,-.5,0,Math.PI*2);ctx.fill();ctx.restore()}
+function draw(t){background(t);pipes.forEach(pipe);ctx.fillStyle="#21101e";ctx.fillRect(0,ground,W,H-ground);ctx.fillStyle="#e64c32";ctx.fillRect(0,ground,W,7);ctx.fillStyle="#ffb347";for(let x=0;x<W;x+=34)ctx.fillRect(x,ground+16,19,3);particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life*2);ctx.fillStyle="#ffb13d";ctx.fillRect(p.x,p.y,4,4)});ctx.globalAlpha=1;birdDraw();if(state==="ready"){ctx.fillStyle="#fff";ctx.font="900 18px system-ui";ctx.textAlign="center";ctx.fillText("TOQUE PARA COMEÇAR",W/2,455)}}
+function tick(ts){if(!lastTime)lastTime=ts;let dt=Math.min((ts-lastTime)/1000,.035);lastTime=ts;if(state==="playing"){bird.vy+=1300*dt;bird.y+=bird.vy*dt;pipes.forEach(p=>p.x-=175*dt);if(pipes.length&&pipes[0].x<-90)pipes.shift();if(pipes[pipes.length-1].x<260)pipes.push(makePipe(500));pipes.forEach(p=>{if(!p.passed&&p.x+62<bird.x){p.passed=true;score++;scoreEl.textContent=score}if(bird.x+14>p.x-7&&bird.x-14<p.x+69&&(bird.y-12<p.top-28||bird.y+12>p.top+p.gap))endGame()});if(bird.y>ground-12||bird.y<12)endGame();particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt});particles=particles.filter(p=>p.life>0)}draw(ts);requestAnimationFrame(tick)}
+function action(e){if(e)e.preventDefault();flap()}
+function showReady(){reset();state="ready";title.textContent="🔥 Pronto para voar?";copy.innerHTML="Toque, clique ou pressione <b>ESPAÇO</b> para impulsionar o pássaro vulcânico e atravessar os portais de lava.";startBtn.textContent="JOGAR AGORA";overlay.classList.remove("hidden")}
+canvas.addEventListener("pointerdown",action);flapBtn.addEventListener("click",action);startBtn.addEventListener("click",flap);restartBtn.addEventListener("click",showReady);
+window.addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="ArrowUp"||e.code==="KeyW"){e.preventDefault();action(e)}});
+shareBtn.addEventListener("click",async()=>{let msg="Fiz "+score+" ponto(s) no VulkanOS Flap! Consegue superar?";try{if(navigator.share)await navigator.share({title:"VulkanOS Flap",text:msg,url:location.href});else if(navigator.clipboard){await navigator.clipboard.writeText(msg+" "+location.href);shareBtn.textContent="✓ Copiado!";setTimeout(()=>shareBtn.textContent="↗ Compartilhar",1500)}}catch(e){}});
+reset();requestAnimationFrame(tick);
+})();
+</script></body></html>

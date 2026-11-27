@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<defs>
+ <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#21121c"/><stop offset=".55" stop-color="#0d0c12"/><stop offset="1" stop-color="#09090e"/></linearGradient>
+ <linearGradient id="red" x2="1" y2="1"><stop stop-color="#ff765a"/><stop offset="1" stop-color="#be1c40"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#ce2e48" stop-opacity=".35"/><stop offset="1" stop-color="#ce2e48" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1200" height="630" fill="url(#bg)"/>
+<circle cx="970" cy="310" r="420" fill="url(#glow)"/>
+<path d="M0 520 280 210 430 360 600 110 810 390 990 220 1200 430" fill="none" stroke="#ff4c60" stroke-opacity=".16" stroke-width="4"/>
+<path d="M70 72 116 52 176 85 163 106 116 82 93 96 121 156 146 120 168 132 123 204 104 192Z" fill="url(#red)"/>
+<text x="205" y="130" fill="#f6f2f4" font-family="Arial,sans-serif" font-size="52" font-weight="900" letter-spacing="5">VULKANOS</text>
+<text x="72" y="300" fill="#fff" font-family="Arial,sans-serif" font-size="72" font-weight="900">SEU PC.</text>
+<text x="72" y="386" fill="#fff" font-family="Arial,sans-serif" font-size="72" font-weight="900">SUA BIBLIOTECA.</text>
+<text x="72" y="472" fill="#ff5266" font-family="Arial,sans-serif" font-size="72" font-weight="900">SUA PRÓXIMA ERA.</text>
+<text x="76" y="544" fill="#c8bbc5" font-family="Arial,sans-serif" font-size="23" letter-spacing="3">PC EDITION  •  EXPERIMENTAL ALPHA</text>
+<rect x="760" y="185" width="370" height="260" rx="22" fill="#121118" stroke="#e94a5c" stroke-opacity=".75" stroke-width="3"/>
+<rect x="777" y="202" width="336" height="30" rx="7" fill="#26202a"/>
+<text x="795" y="223" fill="#f8f2f5" font-family="Arial,sans-serif" font-size="17" font-weight="900">VULKAN  •  BIBLIOTECA</text>
+<rect x="780" y="249" width="90" height="177" rx="8" fill="#22141d"/>
+<text x="795" y="280" fill="#fff" font-family="Arial,sans-serif" font-size="12">▦ Biblioteca</text>
+<text x="795" y="315" fill="#aaa" font-family="Arial,sans-serif" font-size="12">🎮 Emuladores</text>
+<text x="795" y="350" fill="#aaa" font-family="Arial,sans-serif" font-size="12">◎ Navegador</text>
+<rect x="884" y="250" width="105" height="72" rx="9" fill="#a6363e"/>
+<rect x="1000" y="250" width="105" height="72" rx="9" fill="#394963"/>
+<rect x="884" y="333" width="105" height="80" rx="9" fill="#58a96a"/>
+<rect x="1000" y="333" width="105" height="80" rx="9" fill="#33313a"/>
+<text x="892" y="304" fill="#fff" font-family="Arial,sans-serif" font-size="13" font-weight="bold">STEAM</text>
+<text x="1008" y="304" fill="#fff" font-family="Arial,sans-serif" font-size="13" font-weight="bold">JOGOS</text>
+<text x="892" y="396" fill="#fff" font-family="Arial,sans-serif" font-size="13" font-weight="bold">RETRO</text>
+<text x="1008" y="396" fill="#fff" font-family="Arial,sans-serif" font-size="13" font-weight="bold">APPS</text>
+<text x="775" y="485" fill="#a99ba6" font-family="Arial,sans-serif" font-size="15">DEBIAN 13 • XFCE • PC x86-64</text>
+</svg>

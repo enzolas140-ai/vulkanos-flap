@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="300" viewBox="0 0 640 300">
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#282b32"/><stop offset=".5" stop-color="#0f1118"/><stop offset="1" stop-color="#252a31"/></linearGradient><linearGradient id="red" x2="1" y2="1"><stop stop-color="#fb5365"/><stop offset="1" stop-color="#9a2036"/></linearGradient></defs>
+<rect width="640" height="300" fill="url(#bg)"/>
+<g transform="translate(250 107)" fill="none" stroke="url(#red)" stroke-width="17" stroke-linecap="round">
+<path d="M-118 40 A130 130 0 0 1 118 40"/>
+<path d="M-88 40 A98 98 0 0 1 88 40" opacity=".86"/>
+<path d="M-58 40 A66 66 0 0 1 58 40" opacity=".72"/>
+</g>
+<g fill="#fff"><circle cx="250" cy="148" r="8"/><circle cx="250" cy="115" r="5"/><circle cx="208" cy="147" r="5"/><circle cx="292" cy="147" r="5"/></g>
+<path d="M405 69L556 69L556 222L405 222Z" fill="#181b22" stroke="#535861" stroke-width="2" rx="8"/>
+<g fill="#9fa5af"><rect x="430" y="91" width="101" height="9" rx="4"/><rect x="430" y="116" width="82" height="7" rx="3"/><rect x="430" y="137" width="96" height="7" rx="3"/><rect x="430" y="158" width="66" height="7" rx="3"/></g>
+<text x="28" y="42" fill="#d8dce3" font-family="DejaVu Sans,sans-serif" font-size="19" font-weight="900" letter-spacing="4">VULKANOS EMULATION</text>
+<rect x="0" y="252" width="640" height="48" fill="#06070b" opacity=".84"/>
+<text x="28" y="284" fill="#fff" font-family="DejaVu Sans,sans-serif" font-size="28" font-weight="900">RETROARCH</text>
+<text x="610" y="282" fill="#bdc3cd" text-anchor="end" font-family="DejaVu Sans,sans-serif" font-size="17">PRONTO PARA JOGAR</text>
+</svg>
