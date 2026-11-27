@@ -74,7 +74,10 @@ jobs:
           fi
 
           ls -lh release-assets
-          (cd release-assets && sha256sum -c SHA256SUMS)
+          expected_sha="$(awk 'NR==1 {print $1}' release-assets/SHA256SUMS)"
+          actual_sha="$(cat "$ISO.part-"* | sha256sum | awk '{print $1}')"
+          test "$actual_sha" = "$expected_sha"
+          echo "ISO reconstruida a partir das partes: SHA-256 OK ($actual_sha)"
 
       - name: Write release notes
         shell: bash
