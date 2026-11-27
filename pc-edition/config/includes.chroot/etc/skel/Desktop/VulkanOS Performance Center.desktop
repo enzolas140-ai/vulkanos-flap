@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=VulkanOS Performance Center
+Comment=GameMode, MangoHud, graphics and audio diagnostics
+Exec=/usr/local/bin/vulkanos-performance
+Icon=utilities-system-monitor
+Terminal=false
+Categories=Settings;System;

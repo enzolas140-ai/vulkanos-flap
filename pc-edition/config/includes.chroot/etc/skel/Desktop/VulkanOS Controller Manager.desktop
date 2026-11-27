@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=VulkanOS Controller Manager
+Comment=Detect and configure game controllers
+Exec=/usr/local/bin/vulkanos-controller-manager
+Icon=input-gaming
+Terminal=false
+Categories=Settings;HardwareSettings;
