@@ -1,6 +1,6 @@
 VULKANOS PC ALPHA 0.1
 LICENCA DE AVALIACAO E COMPARTILHAMENTO — VERSAO 1.0
-Data: 27 de novembro de 2026
+Data: 26 de novembro de 2026
 
 Copyright (c) 2026 VulkanOS Project. Todos os direitos reservados sobre os Materiais VulkanOS originais.
 
