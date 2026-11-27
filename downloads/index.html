@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#09090e">
-<meta name="description" content="Baixe o VulkanOS PC Alpha 0.1, consulte a licença, checksums e instruções de instalação.">
+<meta name="description" content="Baixe VulkanOS PC Alpha 0.2 com dashboard, confira SHA-256, licença e instruções de montagem e teste.">
 <meta property="og:title" content="VulkanOS — Downloads oficiais">
-<meta property="og:description" content="Downloads, licença, verificação SHA-256 e instruções para testar a edição PC.">
+<meta property="og:description" content="VulkanOS PC Alpha 0.2 Dashboard Edition: downloads diretos das partes da ISO, checksum e instruções.">
 <meta property="og:image" content="https://enzolas140-ai.github.io/vulkanos-flap/assets/share-card.svg">
 <title>Downloads oficiais — VulkanOS</title>
 <link rel="icon" href="../assets/vulkanos-mark.svg">
@@ -17,60 +17,72 @@ header{border-bottom:1px solid #ffffff18;background:#09090eea}.nav{height:72px;d
 .hero{padding:65px 0 38px}.eyebrow{color:#ff9a83;text-transform:uppercase;letter-spacing:.18em;font-size:11px;font-weight:900}.hero h1{font-size:clamp(38px,7vw,68px);line-height:1;letter-spacing:-.05em;margin:16px 0}.hero h1 span{color:var(--red)}.hero p{max-width:700px;color:#d1c5cf;font-size:17px}
 .panel{background:linear-gradient(145deg,#21151f,#121017 70%);border:1px solid #e94a5a55;border-radius:18px;padding:26px;margin:20px 0;box-shadow:0 20px 60px #0005}
 h2{margin:0 0 12px;font-size:24px}h3{margin:0 0 8px}.muted{color:var(--muted)}.tag{display:inline-block;padding:4px 10px;border:1px solid #ed536044;background:#ed40531b;border-radius:30px;color:#ff9c94;font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
-.btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 17px;border-radius:999px;text-decoration:none;font-weight:850;font-size:14px;margin:6px 7px 6px 0;background:linear-gradient(120deg,#f34b59,#a91e39);color:white;border:1px solid #ff8b8544}.btn.secondary{background:#ffffff0b;border:1px solid #ffffff2b;color:white}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 17px;border-radius:999px;text-decoration:none;font-weight:850;font-size:14px;margin:6px 7px 6px 0;background:linear-gradient(120deg,#f34b59,#a91e39);color:white;border:1px solid #ff8b8544}
+.btn.secondary{background:#ffffff0b;border:1px solid #ffffff2b;color:white}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.tile{padding:20px;border:1px solid #ffffff1b;border-radius:14px;background:#ffffff06}.tile p,li{color:#c8bdc7}.notice{border-left:3px solid var(--orange);padding:10px 14px;background:#ff80580e;color:#e4d5d9;margin:16px 0;font-size:14px}
+code{display:block;overflow-wrap:anywhere;background:#08080c;padding:10px;border-radius:8px;font-size:12px;color:#eee}
 footer{border-top:1px solid #ffffff18;margin-top:50px;padding:25px 0;color:#a99eaa;font-size:13px}
-@media(max-width:680px){.grid{grid-template-columns:1fr}.hero{padding-top:45px}.panel{padding:20px}}
+@media(max-width:680px){.grid{grid-template-columns:1fr}.hero{padding-top:45px}.panel{padding:20px}.btn{width:100%;margin:6px 0}}
 </style></head>
 <body>
 <header><div class="wrap nav"><a class="brand" href="../"><img src="../assets/vulkanos-mark.svg" alt="">VULKAN<b>OS</b></a><a href="../">← Página principal</a></div></header>
 <main class="wrap">
-<section class="hero"><div class="eyebrow">Portal oficial de downloads · PC Edition</div><h1>Baixe. Teste.<br><span>Ajude a evoluir.</span></h1><p>Esta página reúne a ISO pública do VulkanOS PC Alpha 0.1, licença de avaliação e compartilhamento, checksums e instruções para reconstruir e gravar a imagem.</p></section>
+<section class="hero"><div class="eyebrow">Portal oficial de downloads · PC Edition</div><h1>Baixe. Teste.<br><span>Ajude a evoluir.</span></h1><p>A versão pública mais recente é a VulkanOS PC Alpha 0.2 — Dashboard Edition. Faça o download das duas partes da ISO, reconstrua o arquivo e confira o SHA-256 antes de gravar.</p></section>
+
 <section class="panel">
-<div class="tag">v0.1.0-alpha.1 · primeira versão pública</div>
-<h2 style="margin-top:14px">VulkanOS PC Alpha 0.1 — amd64</h2>
-<p class="muted">Esta release é a primeira Alpha pública, baseada em Debian 13 (Trixie) com XFCE e ferramentas voltadas a jogos. Ela é anterior ao dashboard experimental apresentado na página principal.</p>
-<a class="btn" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/download/v0.1.0-alpha.1/VulkanOS-PC-Alpha-0.1-amd64.iso.part-00">Baixar parte 1 · 1,8 GiB</a>
-<a class="btn" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/download/v0.1.0-alpha.1/VulkanOS-PC-Alpha-0.1-amd64.iso.part-01">Baixar parte 2 · 821 MiB</a>
-<a class="btn secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/tag/v0.1.0-alpha.1">Ver release no GitHub ↗</a>
-<div style="margin-top:16px"><b>SHA-256 das partes</b>
-<p class="muted" style="font-size:12px">Parte 1</p><code style="display:block;overflow-wrap:anywhere;background:#08080c;padding:10px;border-radius:8px;font-size:12px">13944975a9604294ee048ba60bc7ed30071ce347c7b56415625ddc0d9be75782</code>
-<p class="muted" style="font-size:12px">Parte 2</p><code style="display:block;overflow-wrap:anywhere;background:#08080c;padding:10px;border-radius:8px;font-size:12px">70054a8d346ff087a3d5af98cd1578bbce3bb6abab446aa6594cddcc82c14469</code></div>
-<div class="notice"><b>Importante:</b> baixe as duas partes para a mesma pasta. A ISO só fica completa depois de reconstruí-las seguindo o arquivo REASSEMBLE.txt.</div>
+<div class="tag">Release pública · v0.2.0-alpha.1</div>
+<h2 style="margin-top:14px">VulkanOS PC Alpha 0.2 — Dashboard Edition</h2>
+<p class="muted">Esta é a build com a nova interface própria em estilo console, tema escuro em vermelho e preto, Biblioteca, Emuladores, Navegador, Steam, Configurações e Sobre. Base Debian 13 (Trixie) com XFCE. PC x86-64 / amd64.</p>
+<a class="btn" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/download/v0.2.0-alpha.1/VulkanOS-PC-Alpha-0.2-amd64.iso.part-00">Baixar ISO — parte 1 de 2 · 1,76 GiB</a>
+<a class="btn" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/download/v0.2.0-alpha.1/VulkanOS-PC-Alpha-0.2-amd64.iso.part-01">Baixar ISO — parte 2 de 2 · 821 MiB</a>
+<a class="btn secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/tag/v0.2.0-alpha.1" target="_blank" rel="noopener">Ver todos os Assets da Release ↗</a>
+
+<h3 style="margin-top:20px">Reconstruir a ISO</h3>
+<p class="muted">Baixe as duas partes para a mesma pasta. No Windows (CMD):</p>
+<code>copy /b VulkanOS-PC-Alpha-0.2-amd64.iso.part-00+VulkanOS-PC-Alpha-0.2-amd64.iso.part-01 VulkanOS-PC-Alpha-0.2-amd64.iso</code>
+<p class="muted">No Linux/macOS:</p>
+<code>cat VulkanOS-PC-Alpha-0.2-amd64.iso.part-00 VulkanOS-PC-Alpha-0.2-amd64.iso.part-01 &gt; VulkanOS-PC-Alpha-0.2-amd64.iso</code>
+
+<h3 style="margin-top:20px">Verificar integridade</h3>
+<p class="muted">Depois de reconstruir a ISO, valide o SHA-256 usando o manifesto oficial:</p>
+<a class="btn secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/download/v0.2.0-alpha.1/SHA256SUMS">Baixar SHA256SUMS ↧</a>
+<a class="btn secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/download/v0.2.0-alpha.1/REASSEMBLE.txt">Baixar REASSEMBLE.txt ↧</a>
+<a class="btn secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/download/v0.2.0-alpha.1/dashboard-preview.png">Ver prévia do dashboard ↗</a>
+<a class="btn secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/download/v0.2.0-alpha.1/LICENSE-VULKANOS-ALPHA.txt">Baixar licença VulkanOS ↧</a>
+<div class="notice"><b>Importante:</b> a ISO tem aproximadamente 2,75 GB e está dividida por limite de tamanho de arquivo do GitHub Releases. É obrigatório baixar as duas partes e juntá-las antes de gravar. Faça backup, teste primeiro em modo Live e use um pendrive separado.</div>
 </section>
+
 <section class="grid">
-<article class="tile"><h3>1. Reconstruir a ISO</h3><p>Baixe o guia de reconstrução para Windows e Linux:</p><a class="btn secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/download/v0.1.0-alpha.1/REASSEMBLE.txt">REASSEMBLE.txt ↗</a><p class="muted">No Windows, o guia usa PowerShell para juntar as partes em um único arquivo ISO.</p></article>
-<article class="tile"><h3>2. Verificar integridade</h3><p>Use o manifesto oficial SHA-256 depois de reconstruir a imagem:</p><a class="btn secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/download/v0.1.0-alpha.1/SHA256SUMS">SHA256SUMS ↗</a><p class="muted">Compare o hash calculado da ISO com o valor publicado no manifesto.</p></article>
+<article class="tile"><h3>O que há na versão 0.2</h3><p>Dashboard experimental com Biblioteca, Emuladores, Navegador, Steam, Configurações e Sobre; indicadores de rede, controles, Bluetooth e bateria; lista básica de jogos Steam e ROMs; navegação básica por teclado e joystick Linux.</p></article>
+<article class="tile"><h3>Limitações conhecidas</h3><p>Base Debian 13 com XFCE, ainda não é um sistema independente. PC amd64 apenas, não é para handhelds ARM. Compatibilidade física não foi validada em vários computadores; controles não têm suporte universal. BOOT/VKROMS, RUNVK e kernel/drivers próprios ainda não existem.</p></article>
 </section>
+
 <section class="panel">
-<div class="tag">Licença VulkanOS</div><h2 style="margin-top:14px">Licença de Avaliação e Compartilhamento 1.0</h2>
-<p>Permite baixar, testar e compartilhar gratuitamente a cópia original e inalterada do VulkanOS Alpha. Modificações nos materiais originais VulkanOS e redistribuição de versões modificadas como oficiais exigem autorização prévia.</p>
-<a class="btn" href="../LICENSE-ALPHA-0.1.txt">Ler / baixar licença completa ↗</a>
-<a class="btn secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/blob/main/LICENSE-ALPHA-0.1.txt">Ver licença no GitHub ↗</a>
-<div class="notice">A licença personalizada cobre apenas os materiais originais do projeto VulkanOS. Debian, XFCE, Steam, RetroArch e demais componentes de terceiros continuam sujeitos às próprias licenças e termos. Esta não é uma licença open source.</div>
+<div class="tag">Versão anterior</div><h2 style="margin-top:14px">VulkanOS PC Alpha 0.1</h2>
+<p class="muted">A primeira Alpha pública foi preservada como referência. Ela é anterior ao novo dashboard e não é a versão recomendada para testar a interface mostrada no site.</p>
+<a class="btn secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/releases/tag/v0.1.0-alpha.1">Abrir release v0.1.0-alpha.1 ↗</a>
 </section>
+
 <section class="panel">
 <h2>Antes de instalar</h2>
 <ul>
 <li>Arquitetura: PC x86-64 / amd64. Não é uma imagem para R36S, TrimUI ou dispositivos ARM.</li>
 <li>Teste primeiro em modo Live usando um pendrive separado.</li>
 <li>Gravar ou instalar uma ISO pode apagar dados do dispositivo selecionado. Faça backup e confira o destino.</li>
-<li>A build foi concluída no GitHub Actions, mas isso não equivale a validação em vários computadores físicos.</li>
+<li>A build e o teste automatizado do dashboard foram concluídos, mas isso não equivale a validação em vários computadores físicos.</li>
 <li>Compatibilidade de GPU, Wi-Fi, áudio, Bluetooth e controles pode variar conforme o hardware.</li>
 <li>Não inclui ROMs, BIOS ou jogos. Steam pode exigir internet na primeira inicialização.</li>
 </ul>
 </section>
-<section class="grid">
-<article class="tile"><h3>O que esta Alpha inclui</h3><p>Debian 13, XFCE, Firefox ESR, instalador Steam, RetroArch e cores, Hydra Launcher, ES-DE, AntiMicroX e suporte básico a rede, áudio e Bluetooth.</p></article>
-<article class="tile"><h3>O que ainda não está pronto</h3><p>Assistente BOOT/VKROMS, modo RUNVK, mapeamento universal automático, kernel próprio, drivers próprios e ports exclusivos VulkanOS.</p></article>
-</section>
+
 <section class="panel">
-<h2>Fontes, código e suporte</h2>
-<p class="muted">Consulte o código-fonte, acompanhe as próximas builds e reporte problemas com o modelo do PC, CPU, GPU e detalhes do teste.</p>
+<h2>Fontes, código e comunidade</h2>
+<p class="muted">Consulte o código-fonte, acompanhe as próximas builds e reporte problemas com o modelo do PC, CPU, GPU e detalhes do teste. Entre no Discord dos Vulcanos.</p>
 <a class="btn secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/tree/main/pc-edition">Código-fonte PC ↗</a>
 <a class="btn secondary" href="https://github.com/enzolas140-ai/vulkanos-flap/issues">Reportar problema ↗</a>
+<a class="btn secondary" href="https://discord.gg/8BRuhvsPa">Discord dos Vulcanos ↗</a>
 <a class="btn secondary" href="https://github.com/enzolas140-ai/vulkanos-flap">Repositório ↗</a>
 </section>
 </main>
-<footer><div class="wrap">VulkanOS PC Edition · Alpha experimental · © 2026 VulkanOS project materials. Componentes de terceiros mantêm suas respectivas licenças.</div></footer>
+<footer><div class="wrap">VulkanOS PC Edition · Alpha experimental · Criado por enzolas140 · © 2026. Componentes de terceiros mantêm suas respectivas licenças.</div></footer>
 </body></html>
