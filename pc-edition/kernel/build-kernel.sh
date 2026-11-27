@@ -12,7 +12,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
   build-essential bc bison flex libssl-dev libelf-dev libncurses-dev \
-  dwarves rsync cpio kmod xz-utils fakeroot linux-source linux-image-amd64
+  dwarves rsync cpio kmod xz-utils fakeroot debhelper lsb-release linux-source linux-image-amd64
 
 SOURCE_ARCHIVE="$(find /usr/src -maxdepth 1 -type f \( -name 'linux-source-*.tar.xz' -o -name 'linux-source-*.tar.zst' \) | sort -V | tail -n 1)"
 if [[ -z "$SOURCE_ARCHIVE" ]]; then
@@ -58,6 +58,13 @@ scripts/config --enable MODULES \
   --set-str SYSTEM_REVOCATION_KEYS ""
 
 make olddefconfig
+
+# Linux 6.12's helper mkdebian emits debhelper-compat (= 12), which is
+# unavailable on Debian 13 (Trixie). Trixie ships debhelper compat level 13.
+# Adjust only the generated package metadata; the kernel source/config stay intact.
+sed -i 's/debhelper-compat (= 12)/debhelper-compat (= 13)/' scripts/package/mkdebian
+grep -q 'debhelper-compat (= 13)' scripts/package/mkdebian
+
 KERNEL_VERSION="$(make -s kernelversion)"
 cp .config "$ROOT/KERNEL-CONFIG"
 cp "$SOURCE_ARCHIVE" "$ROOT/KERNEL-SOURCE.tar.xz"
