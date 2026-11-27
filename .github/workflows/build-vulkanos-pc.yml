@@ -37,9 +37,7 @@ jobs:
                 grub-pc-bin grub-efi-amd64-bin grub-efi-ia32-bin \
                 dosfstools mtools e2fsprogs \
                 xz-utils bzip2 rsync file gnupg
-              VULKANOS_RESOURCE_DIR="$PWD/config/includes.chroot/usr/share/backgrounds/vulkanos" \\
-                xvfb-run -a /usr/bin/python3 \\
-                "$PWD/config/includes.chroot/usr/local/bin/vulkanos-dashboard" --smoke-test
+              VULKANOS_RESOURCE_DIR="$PWD/config/includes.chroot/usr/share/backgrounds/vulkanos" xvfb-run -a /usr/bin/python3 "$PWD/config/includes.chroot/usr/local/bin/vulkanos-dashboard" --smoke-test
               bash ./build.sh
             '
 
