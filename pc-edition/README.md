@@ -16,12 +16,12 @@ VulkanOS PC is a lightweight, x86-64 Debian 13 live system with XFCE and an expe
 - Hydra Launcher (latest official Linux amd64 .deb at build time)
 - AntiMicroX for manual gamepad-to-keyboard/mouse mapping
 
-The dashboard opens automatically after the XFCE session starts. It does not replace ES-DE: the dashboard opens ES-DE for the emulation library. Keyboard shortcuts are shown in the footer. Controller detection is only a basic device-presence indicator; universal gamepad navigation/mapping is not implemented yet.
+The dashboard opens automatically after the XFCE session starts. It does not replace ES-DE: the dashboard opens ES-DE for the emulation library. The footer shows the A/B/X/Y/START actions. Keyboard arrows, Enter and Escape are supported, together with basic button/axis navigation through Linux joystick devices (/dev/input/js*). This is not universal controller support; device compatibility still requires hardware testing, and AntiMicro provides manual mapping.
 
 ## Build
 Run bash build.sh as root inside Debian 13 (Trixie) with the packages listed in the GitHub Actions workflow.
 
-The workflow builds an ISO-hybrid image and uploads it as a GitHub Actions artifact.
+The workflow checks shell/Python syntax, validates the SVG artwork, launches the dashboard in a virtual 1280×720 display, uploads a screenshot preview, and then builds the ISO-hybrid image. The ISO, checksum and dashboard preview are uploaded as a GitHub Actions artifact.
 
 ## USB
 Write the ISO to a USB stick with Rufus. For Debian live images, choose DD mode when Rufus asks. Test the live session before installing. This is not a tested persistent USB installation.

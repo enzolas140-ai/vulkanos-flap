@@ -37,7 +37,19 @@ jobs:
                 grub-pc-bin grub-efi-amd64-bin grub-efi-ia32-bin \
                 dosfstools mtools e2fsprogs \
                 xz-utils bzip2 rsync file gnupg
-              VULKANOS_RESOURCE_DIR="$PWD/config/includes.chroot/usr/share/backgrounds/vulkanos" xvfb-run -a /usr/bin/python3 "$PWD/config/includes.chroot/usr/local/bin/vulkanos-dashboard" --smoke-test
+              bash -n ./build.sh ./config/hooks/normal/*.hook.chroot ./config/includes.chroot/usr/local/bin/vulkanos-session-start
+              PYTHONPYCACHEPREFIX=/tmp/vulkanos-pycache python3 -m py_compile "$PWD/config/includes.chroot/usr/local/bin/vulkanos-dashboard"
+              python3 - <<'PY'
+              import pathlib
+              import xml.etree.ElementTree as ET
+              for svg in pathlib.Path("config/includes.chroot").rglob("*.svg"):
+                  ET.parse(svg)
+              print("All VulkanOS SVG resources are valid")
+              PY
+              VULKANOS_RESOURCE_DIR="$PWD/config/includes.chroot/usr/share/backgrounds/vulkanos" \
+              VULKANOS_SCREENSHOT_PATH="$PWD/dashboard-preview.png" \
+                xvfb-run -a -s "-screen 0 1280x720x24" /usr/bin/python3 "$PWD/config/includes.chroot/usr/local/bin/vulkanos-dashboard" --smoke-test
+              test -s dashboard-preview.png
               bash ./build.sh
             '
 
@@ -48,6 +60,7 @@ jobs:
           path: |
             pc-edition/VulkanOS-PC-Alpha-0.1-amd64.iso
             pc-edition/SHA256SUMS
+            pc-edition/dashboard-preview.png
           if-no-files-found: error
           compression-level: 0
           retention-days: 14

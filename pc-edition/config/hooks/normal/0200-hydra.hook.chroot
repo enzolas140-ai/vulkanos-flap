@@ -19,5 +19,3 @@ apt-get update
 apt-get install -y --no-install-recommends "$HYDRA_DEB"
 rm -f "$HYDRA_DEB"
 rm -rf /var/lib/apt/lists/*
-
-[executed on device: SnyX-PC (cde0589c-0418-41c7-a0c5-371e66fb4eb6)]

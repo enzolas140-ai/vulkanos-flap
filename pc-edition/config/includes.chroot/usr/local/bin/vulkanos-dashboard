@@ -219,7 +219,7 @@ def card_art(filename):
 def image_from(path, fallback_icon="applications-games"):
     if path:
         try:
-            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(path), 480, 190, True)
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(path), 280, 125, True)
             return Gtk.Image.new_from_pixbuf(pixbuf)
         except (GLib.Error, OSError):
             pass
@@ -463,7 +463,7 @@ class VulkanDashboard(Gtk.Window):
         art.set_vexpand(True)
         art.set_halign(Gtk.Align.FILL)
         art.set_valign(Gtk.Align.FILL)
-        art.set_size_request(-1, 108)
+        art.set_size_request(-1, 125)
         art.get_style_context().add_class("tile-art")
         box.pack_start(art, True, True, 0)
 
@@ -690,12 +690,19 @@ class VulkanDashboard(Gtk.Window):
                 capture_output=True, text=True, timeout=2
             )
             lines = [line.lower() for line in result.stdout.splitlines()]
-            if any(line.startswith(("wifi:connected", "802-11-wireless:connected")) for line in lines):
-                network_text = "WI-FI CONECTADO"
-                wifi_text = "WI-FI CONECTADO"
-            elif any(line.startswith(("ethernet:connected", "802-3-ethernet:connected")) for line in lines):
-                network_text = "CABO CONECTADO"
-                wifi_text = "REDE CONECTADA"
+            wifi_connected = any(
+                line.startswith(("wifi:connected", "802-11-wireless:connected"))
+                for line in lines
+            )
+            ethernet_connected = any(
+                line.startswith(("ethernet:connected", "802-3-ethernet:connected"))
+                for line in lines
+            )
+            if ethernet_connected:
+                network_text = "CABO (GIGABIT)"
+            elif wifi_connected:
+                network_text = "WI-FI"
+            wifi_text = "WI-FI CONECTADO" if wifi_connected else "WI-FI DESCONECTADO"
         except (OSError, subprocess.TimeoutExpired):
             pass
 
@@ -732,8 +739,14 @@ class VulkanDashboard(Gtk.Window):
         self.network_label.set_text("CONEXÃO DE REDE: " + network_text)
         self.controller_label.set_text("CONTROLADOR: " + controller_text)
         self.bluetooth_label.set_text("BLUETOOTH: " + bt_text)
-        self.wifi_label.set_text("◉  " + wifi_text)
-        self.battery_label.set_text("▰  " + battery_text)
+        self.wifi_label.set_markup(
+            '<span foreground="#ece9ed" size="x-large">)))</span>  '
+            + GLib.markup_escape_text(wifi_text)
+        )
+        self.battery_label.set_markup(
+            '<span foreground="#53d17b" size="x-large">▰</span>  '
+            + GLib.markup_escape_text(battery_text)
+        )
         return True
 
     def update_clock(self):
@@ -745,6 +758,13 @@ class VulkanDashboard(Gtk.Window):
         button = self.nav_buttons.get(self.active_page)
         if button:
             button.grab_focus()
+
+    def focus_first_tile(self):
+        tiles = self.page_tiles.get(self.active_page, [])
+        if tiles:
+            tiles[0].grab_focus()
+        else:
+            self.focus_nav()
 
     def move_focus(self, direction):
         focused = self.get_focus()
@@ -936,13 +956,34 @@ class VulkanDashboard(Gtk.Window):
                 self.controller_path = None
         return True
 
+    def finish_smoke_test(self):
+        screenshot_path = os.environ.get("VULKANOS_SCREENSHOT_PATH")
+        if screenshot_path:
+            try:
+                gdk_window = self.get_window()
+                if gdk_window is None:
+                    raise RuntimeError("GTK dashboard window was not realized")
+                width, height = self.get_size()
+                pixbuf = Gdk.pixbuf_get_from_window(gdk_window, 0, 0, width, height)
+                if pixbuf is None:
+                    raise RuntimeError("Could not capture the GTK dashboard")
+                Path(screenshot_path).parent.mkdir(parents=True, exist_ok=True)
+                pixbuf.savev(screenshot_path, "png", [], [])
+                print("VULKANOS_SCREENSHOT=" + screenshot_path, flush=True)
+            except Exception as error:
+                self.smoke_test_error = str(error)
+        Gtk.main_quit()
+        return GLib.SOURCE_REMOVE
+
     def run_smoke_test(self):
+        self.smoke_test_error = None
         for page in self.page_names:
             self.switch_page(page)
         self.switch_page("library")
         self.show_all()
         self.fullscreen()
-        GLib.timeout_add(450, Gtk.main_quit)
+        self.focus_first_tile()
+        GLib.timeout_add(900, self.finish_smoke_test)
 
 def main():
     smoke_test = "--smoke-test" in sys.argv
@@ -951,15 +992,17 @@ def main():
     if smoke_test:
         window.run_smoke_test()
         Gtk.main()
+        smoke_test_error = window.smoke_test_error
         window.destroy()
+        if smoke_test_error:
+            print("VulkanOS dashboard smoke test failed: " + smoke_test_error, file=sys.stderr)
+            return 1
         return 0
     window.is_fullscreen = True
     window.fullscreen()
-    window.focus_nav()
+    window.focus_first_tile()
     Gtk.main()
     return 0
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-[executed on device: SnyX-PC (cde0589c-0418-41c7-a0c5-371e66fb4eb6)]
