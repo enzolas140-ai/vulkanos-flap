@@ -4,8 +4,9 @@ import glob
 import os
 import re
 import shlex
-import shutil
+import struct
 import subprocess
+import sys
 from pathlib import Path
 
 import gi
@@ -13,45 +14,60 @@ gi.require_version("Gtk", "3.0")
 gi.require_version("GdkPixbuf", "2.0")
 from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
 
-APP_NAME = "VulkanOS"
 HOME = Path.home()
 ROM_ROOT = HOME / "ROMs"
+RESOURCE_ROOT = Path(os.environ.get(
+    "VULKANOS_RESOURCE_DIR", "/usr/share/backgrounds/vulkanos"
+))
+CARD_ROOT = RESOURCE_ROOT / "cards"
+BACKGROUND = RESOURCE_ROOT / "vulkanos-dashboard.svg"
 
-CSS = b"""
+CSS = """
 * { font-family: 'DejaVu Sans', sans-serif; }
 window, .root { background-color: #0b0c10; color: #f3f3f5; }
-.topbar { background-color: #111216; border-bottom: 1px solid #30272c; padding: 10px 22px; }
-.brand { font-size: 25px; font-weight: 900; letter-spacing: 1px; color: #f5f5f7; }
-.brand-red { color: #ed4055; }
-.clock { font-size: 21px; font-weight: 700; color: #f2f2f3; }
-.chip { background-color: #211d22; color: #e3dfe2; border: 1px solid #45333b; border-radius: 8px; padding: 6px 10px; font-size: 10px; font-weight: 700; }
-.sidebar { background-color: #111216; border-right: 1px solid #38232b; padding: 18px 12px; }
-.nav-button { color: #d5d2d5; background-color: transparent; border: 0; border-left: 4px solid transparent; border-radius: 7px; padding: 13px 12px; font-size: 15px; font-weight: 700; }
-.nav-button:hover { background-color: #272127; color: #ffffff; }
-.nav-button:focus { border: 1px solid #f04a60; }
-.nav-button.active { color: #ffffff; background-image: linear-gradient(90deg, #8e2638, #35161e); border-left: 4px solid #f1485d; }
-.content { background-image: url("file:///usr/share/backgrounds/vulkanos/vulkanos-dashboard.svg"); background-size: cover; padding: 25px 28px; }
-.page-title { font-size: 27px; font-weight: 900; color: #f3f1f2; }
-.section-title { font-size: 16px; font-weight: 800; color: #e5e1e3; margin-top: 16px; }
-.muted { color: #aaa4a9; font-size: 12px; }
-.tile { color: #ffffff; border-radius: 13px; border: 1px solid #46353d; padding: 12px; background-image: linear-gradient(135deg, #29272d, #17171c); }
-.tile:hover, .tile:focus { border: 2px solid #f14a60; background-image: linear-gradient(135deg, #43232d, #20191f); }
-.tile-red { background-image: linear-gradient(135deg, #7b2636, #2e1b24); }
-.tile-blue { background-image: linear-gradient(135deg, #244c61, #172630); }
-.tile-gold { background-image: linear-gradient(135deg, #68502a, #282019); }
-.tile-green { background-image: linear-gradient(135deg, #275746, #172a25); }
-.tile-purple { background-image: linear-gradient(135deg, #4c345e, #231b2e); }
-.tile-icon { color: #ffffff; }
-.tile-title { font-size: 16px; font-weight: 900; color: #ffffff; }
-.tile-subtitle { font-size: 11px; color: #e1d9dd; }
-.footer { background-color: #111216; border-top: 1px solid #35252c; padding: 9px 18px; }
-.footer-text { color: #d7d3d6; font-size: 11px; font-weight: 700; }
-.footer-key { color: #ff6678; font-weight: 900; }
+.windowbar { background-color: #08090c; padding: 1px 9px; min-height: 18px; }
+.window-title { color: #aaa8ad; font-size: 9px; font-weight: 700; }
+.window-control { color: #dedce0; background-color: transparent; border: 0; padding: 0 8px; min-height: 17px; font-size: 11px; }
+.window-control:hover { background-color: #39343b; }
+.window-close:hover { background-color: #a9273d; }
+.topbar { background-image: linear-gradient(90deg, #17151b, #111116); border-bottom: 1px solid #37252d; padding: 8px 26px; min-height: 54px; }
+.brand { font-size: 25px; font-weight: 900; letter-spacing: 1px; color: #f5f3f4; }
+.brand-mark { color: #e83e55; font-size: 31px; font-weight: 900; }
+.top-status { color: #eee9ec; font-size: 14px; padding: 5px 10px; }
+.clock { font-size: 20px; font-weight: 700; color: #f2f2f3; padding-left: 8px; }
+.sidebar { background-color: rgba(12, 13, 18, 0.96); border-right: 1px solid #672b39; padding: 20px 14px 12px 25px; }
+.nav-button { color: #d9d6d9; background-color: transparent; border: 0; border-left: 4px solid transparent; border-radius: 7px; padding: 12px 13px; min-height: 48px; }
+.nav-button:hover { background-color: rgba(80, 43, 54, 0.55); color: #ffffff; }
+.nav-button:focus { outline: 2px solid #f04a60; }
+.nav-button.active { color: #ffffff; background-image: linear-gradient(90deg, #982b3e, #401923); border-left: 4px solid #f14a60; }
+.nav-label { font-size: 16px; font-weight: 700; }
+.sidebar-brand { color: #f6f3f4; font-size: 30px; font-weight: 900; letter-spacing: 1px; }
+.sidebar-brand-red { color: #e84055; }
+.sidebar-small { color: #9f989e; font-size: 11px; }
+.main-area { background-color: #171419; }
+.device-row { background-color: rgba(15, 13, 17, 0.8); padding: 5px 16px; min-height: 29px; }
+.device-chip { background-color: rgba(7, 8, 12, 0.78); color: #ded9dd; border: 1px solid #392932; border-radius: 7px; padding: 4px 9px; font-size: 9px; font-weight: 700; }
+.content { background-color: #1a171d; background-image: url("__BACKGROUND__"); padding: 17px 28px 25px 28px; }
+.page-title { font-size: 25px; font-weight: 900; color: #f3f1f2; }
+.section-title { font-size: 16px; font-weight: 700; color: #e4dfe2; margin-top: 3px; }
+.muted { color: #aca5aa; font-size: 11px; }
+.tile { color: #ffffff; border-radius: 11px; border: 1px solid #51313a; padding: 0; background-image: linear-gradient(135deg, #29272d, #17171c); }
+.tile:hover { border: 2px solid #f14a60; background-image: linear-gradient(135deg, #43232d, #20191f); }
+.tile:focus { border: 3px solid #ff536b; background-image: linear-gradient(135deg, #4b2530, #20171d); }
+.tile-art { background-color: #19191e; }
+.tile-caption { background-color: rgba(5, 6, 9, 0.82); padding: 5px 10px; }
+.tile-title { font-size: 13px; font-weight: 800; color: #ffffff; }
+.tile-subtitle { font-size: 10px; color: #e0d9de; }
+.footer { background-color: #111116; border-top: 1px solid #392830; padding: 8px 15px; min-height: 35px; }
+.footer-text { color: #e0dce0; font-size: 11px; font-weight: 700; }
 """
 
-def run_process(args):
+def launch(args):
     try:
-        subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        subprocess.Popen(
+            args, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL, start_new_session=True
+        )
         return True
     except (FileNotFoundError, PermissionError, OSError):
         return False
@@ -66,8 +82,9 @@ def show_message(parent, title, message):
     dialog.run()
     dialog.destroy()
 
-def launch_desktop_app(search_term):
+def app_entries():
     roots = [Path("/usr/share/applications"), Path("/usr/local/share/applications")]
+    entries = []
     for root in roots:
         if not root.exists():
             continue
@@ -76,15 +93,24 @@ def launch_desktop_app(search_term):
             try:
                 parser.read(desktop, encoding="utf-8")
                 entry = parser["Desktop Entry"]
-                name = entry.get("Name", "")
-                if search_term.lower() not in (name + " " + desktop.name).lower():
+                if entry.get("NoDisplay", "false").lower() == "true":
                     continue
-                command = entry.get("Exec", "")
-                args = [part for part in shlex.split(command) if not part.startswith("%")]
-                if args and run_process(args):
-                    return True
+                entries.append((entry.get("Name", desktop.stem), entry.get("Exec", "")))
             except (KeyError, ValueError, OSError):
                 continue
+    return entries
+
+def launch_desktop_app(search_term):
+    term = search_term.lower()
+    for name, command in app_entries():
+        if term not in name.lower() or not command:
+            continue
+        try:
+            args = [part for part in shlex.split(command) if not part.startswith("%")]
+        except ValueError:
+            continue
+        if args and launch(args):
+            return True
     return False
 
 def steam_games():
@@ -95,6 +121,8 @@ def steam_games():
         HOME / ".local/share/Steam/steamapps",
     ]
     for root in roots:
+        if not root.exists():
+            continue
         for manifest in root.glob("appmanifest_*.acf"):
             try:
                 data = manifest.read_text(encoding="utf-8", errors="ignore")
@@ -104,7 +132,8 @@ def steam_games():
             name = re.search(r'"name"\s+"([^"]+)"', data)
             if appid and name and name.group(1).strip():
                 games[appid.group(1)] = name.group(1).strip()
-    return sorted([(name, appid) for appid, name in games.items()], key=lambda item: item[0].lower())
+    return sorted([(name, appid) for appid, name in games.items()],
+                  key=lambda item: item[0].lower())
 
 def steam_cover(appid):
     roots = [
@@ -112,30 +141,48 @@ def steam_cover(appid):
         HOME / ".steam/root/appcache/librarycache",
         HOME / ".local/share/Steam/appcache/librarycache",
     ]
-    for suffix in ("_header.jpg", "_library_600x900.jpg", "_capsule_616x353.jpg", "_library_hero.jpg"):
+    suffixes = (
+        "_header.jpg", "_library_600x900.jpg",
+        "_capsule_616x353.jpg", "_library_hero.jpg"
+    )
+    for suffix in suffixes:
         for root in roots:
             candidate = root / (str(appid) + suffix)
             if candidate.is_file():
                 return candidate
     return None
 
-def recent_roms(limit=6):
-    extensions = {".nes", ".smc", ".sfc", ".gb", ".gbc", ".gba", ".gen", ".md", ".sms", ".gg", ".zip", ".7z"}
+ROM_EXTENSIONS = {
+    ".nes", ".smc", ".sfc", ".gb", ".gbc", ".gba",
+    ".gen", ".md", ".sms", ".gg", ".zip", ".7z"
+}
+
+def roms_in(folder=None, limit=None):
+    root = ROM_ROOT / folder if folder else ROM_ROOT
     found = []
-    if ROM_ROOT.exists():
-        try:
-            for path in ROM_ROOT.rglob("*"):
-                if path.is_file() and path.suffix.lower() in extensions:
-                    try:
-                        found.append((path.stat().st_mtime, path))
-                    except OSError:
-                        pass
-        except OSError:
-            pass
-    return [path for _, path in sorted(found, reverse=True)[:limit]]
+    if not root.exists():
+        return []
+    try:
+        for path in root.rglob("*"):
+            if path.is_file() and path.suffix.lower() in ROM_EXTENSIONS:
+                try:
+                    found.append((path.stat().st_mtime, path))
+                except OSError:
+                    pass
+    except OSError:
+        return []
+    found.sort(key=lambda item: item[0], reverse=True)
+    paths = [path for _, path in found]
+    return paths[:limit] if limit else paths
+
+def rom_system(path):
+    try:
+        return path.relative_to(ROM_ROOT).parts[0].lower()
+    except (ValueError, IndexError):
+        return path.parent.name.lower()
 
 def launch_rom(path):
-    system = path.parent.name.lower()
+    system = rom_system(path)
     cores = {
         "nes": ["nestopia_libretro.so", "fceumm_libretro.so"],
         "snes": ["snes9x_libretro.so"],
@@ -152,15 +199,33 @@ def launch_rom(path):
     for candidate in cores.get(system, []):
         for folder in core_dirs:
             core = folder / candidate
-            if core.exists() and run_process(["retroarch", "-L", str(core), str(path)]):
+            if core.exists() and launch(["retroarch", "-L", str(core), str(path)]):
                 return
-    if not run_process(["/usr/local/bin/vulkanos-library"]):
+    if not launch(["/usr/local/bin/vulkanos-library"]):
         show_message(None, "Biblioteca", "Não foi possível abrir o ES-DE. Verifique a instalação.")
 
 def open_folder(path):
     Path(path).mkdir(parents=True, exist_ok=True)
-    if not run_process(["thunar", str(path)]):
+    if not launch(["thunar", str(path)]):
         show_message(None, "Arquivos", "O gerenciador de arquivos não está disponível.")
+
+def count_roms(folder):
+    return len(roms_in(folder))
+
+def card_art(filename):
+    path = CARD_ROOT / filename
+    return path if path.is_file() else None
+
+def image_from(path, fallback_icon="applications-games"):
+    if path:
+        try:
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(path), 480, 190, True)
+            return Gtk.Image.new_from_pixbuf(pixbuf)
+        except (GLib.Error, OSError):
+            pass
+    image = Gtk.Image.new_from_icon_name(fallback_icon, Gtk.IconSize.DIALOG)
+    image.set_pixel_size(54)
+    return image
 
 class VulkanDashboard(Gtk.Window):
     def __init__(self):
@@ -169,8 +234,7 @@ class VulkanDashboard(Gtk.Window):
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_decorated(False)
         self.connect("key-press-event", self.on_key)
-        self.connect("destroy", lambda *_: Gtk.main_quit())
-        self.page_buttons = {}
+        self.connect("destroy", self.on_destroy)
         self.page_names = {
             "library": "BIBLIOTECA",
             "emulators": "EMULADORES",
@@ -179,17 +243,29 @@ class VulkanDashboard(Gtk.Window):
             "settings": "CONFIGURAÇÕES",
             "about": "SOBRE",
         }
+        self.nav_buttons = {}
+        self.page_tiles = {}
+        self.active_page = "library"
+        self.controller_fd = None
+        self.controller_path = None
+        self.controller_name = ""
+        self.axis_values = {0: 0, 1: 0}
+        self.is_fullscreen = True
         self.install_css()
         self.build_ui()
         self.refresh_status()
-        GLib.timeout_add_seconds(5, self.refresh_status)
+        GLib.timeout_add_seconds(4, self.refresh_status)
         GLib.timeout_add_seconds(1, self.update_clock)
+        GLib.timeout_add(35, self.poll_controller)
 
     def install_css(self):
         provider = Gtk.CssProvider()
-        provider.load_from_data(CSS)
+        background_uri = BACKGROUND.as_uri() if BACKGROUND.exists() else ""
+        css = CSS.replace("__BACKGROUND__", background_uri).encode("utf-8")
+        provider.load_from_data(css)
         Gtk.StyleContext.add_provider_for_screen(
-            Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+            Gdk.Screen.get_default(), provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
 
     def build_ui(self):
@@ -197,79 +273,164 @@ class VulkanDashboard(Gtk.Window):
         root.get_style_context().add_class("root")
         self.add(root)
 
-        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
-        header.get_style_context().add_class("topbar")
-        root.pack_start(header, False, False, 0)
+        windowbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        windowbar.get_style_context().add_class("windowbar")
+        root.pack_start(windowbar, False, False, 0)
+        title = Gtk.Label(label="VULKAN OS")
+        title.get_style_context().add_class("window-title")
+        windowbar.pack_start(title, False, False, 0)
+        spacer = Gtk.Box()
+        spacer.set_hexpand(True)
+        windowbar.pack_start(spacer, True, True, 0)
+        for caption, style, callback in [
+            ("—", "window-control", self.minimize_window),
+            ("□", "window-control", self.toggle_fullscreen),
+            ("×", "window-control window-close", self.close_dashboard),
+        ]:
+            button = Gtk.Button(label=caption)
+            button.set_relief(Gtk.ReliefStyle.NONE)
+            for css_class in style.split():
+                button.get_style_context().add_class(css_class)
+            button.connect("clicked", lambda _button, action=callback: action())
+            windowbar.pack_end(button, False, False, 0)
 
+        topbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+        topbar.get_style_context().add_class("topbar")
+        root.pack_start(topbar, False, False, 0)
+
+        mark = Gtk.Label()
+        mark.set_markup('<span foreground="#ed4055" weight="heavy" size="xx-large">◢</span>')
+        topbar.pack_start(mark, False, False, 0)
         brand = Gtk.Label()
-        brand.set_markup('<span weight="heavy" size="x-large">▲ VULKAN</span><span foreground="#ed4055" weight="heavy" size="x-large"> OS</span>')
+        brand.set_markup('<span weight="heavy" size="xx-large">VULKAN</span>')
         brand.get_style_context().add_class("brand")
-        header.pack_start(brand, False, False, 0)
+        topbar.pack_start(brand, False, False, 0)
+        spacer = Gtk.Box()
+        spacer.set_hexpand(True)
+        topbar.pack_start(spacer, True, True, 0)
 
-        self.clock_label = Gtk.Label(label="--:--")
-        self.clock_label.get_style_context().add_class("clock")
-        header.pack_end(self.clock_label, False, False, 5)
-
-        for label in ["WIFI", "CONTROLE", "BLUETOOTH", "BATERIA"]:
-            chip = Gtk.Label(label=label)
-            chip.get_style_context().add_class("chip")
-            header.pack_end(chip, False, False, 0)
-            setattr(self, label.lower() + "_label", chip)
+        self.battery_label = self.status_label("BATERIA --")
+        topbar.pack_end(self.clock_label_widget(), False, False, 0)
+        self.wifi_label = self.status_label("WI-FI --")
+        topbar.pack_end(self.wifi_label, False, False, 0)
+        topbar.pack_end(self.battery_label, False, False, 0)
 
         body = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         root.pack_start(body, True, True, 0)
 
-        sidebar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
-        sidebar.set_size_request(235, -1)
+        sidebar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        sidebar.set_size_request(310, -1)
         sidebar.get_style_context().add_class("sidebar")
         body.pack_start(sidebar, False, False, 0)
 
-        for key, title in self.page_names.items():
-            button = Gtk.Button(label=title)
+        nav_items = [
+            ("library", "BIBLIOTECA", "view-grid"),
+            ("emulators", "EMULADORES", "applications-games"),
+            ("browser", "NAVEGADOR", "web-browser"),
+            ("steam", "STEAM", "applications-games"),
+            ("settings", "CONFIGURAÇÕES", "applications-system"),
+            ("about", "SOBRE", "dialog-information"),
+        ]
+        for key, label, icon in nav_items:
+            button = Gtk.Button()
             button.set_relief(Gtk.ReliefStyle.NONE)
             button.set_halign(Gtk.Align.FILL)
             button.get_style_context().add_class("nav-button")
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=13)
+            image = Gtk.Image.new_from_icon_name(icon, Gtk.IconSize.DIALOG)
+            image.set_pixel_size(29)
+            text = Gtk.Label(label=label)
+            text.set_xalign(0)
+            text.get_style_context().add_class("nav-label")
+            row.pack_start(image, False, False, 0)
+            row.pack_start(text, True, True, 0)
+            button.add(row)
             button.connect("clicked", lambda _button, page=key: self.switch_page(page))
             sidebar.pack_start(button, False, False, 0)
-            self.page_buttons[key] = button
+            self.nav_buttons[key] = button
 
-        sidebar.pack_end(Gtk.Label(label="VULKANOS PC • ALPHA"), False, False, 10)
+        sidebar_spacer = Gtk.Box()
+        sidebar_spacer.set_vexpand(True)
+        sidebar.pack_start(sidebar_spacer, True, True, 0)
+        side_brand = Gtk.Label()
+        side_brand.set_markup(
+            '<span weight="heavy" size="xx-large">VULKAN</span>'
+            '<span foreground="#e84055" weight="heavy" size="xx-large"> OS</span>'
+        )
+        side_brand.set_xalign(0)
+        side_brand.get_style_context().add_class("sidebar-brand")
+        sidebar.pack_start(side_brand, False, False, 3)
+        side_tools = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        gear = Gtk.Image.new_from_icon_name("preferences-system", Gtk.IconSize.BUTTON)
+        shield = Gtk.Image.new_from_icon_name("security-high", Gtk.IconSize.BUTTON)
+        side_tools.pack_start(gear, False, False, 2)
+        side_tools.pack_start(shield, False, False, 2)
+        sidebar.pack_start(side_tools, False, False, 6)
+
+        main_area = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        main_area.get_style_context().add_class("main-area")
+        body.pack_start(main_area, True, True, 0)
+
+        device_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        device_row.set_halign(Gtk.Align.END)
+        device_row.get_style_context().add_class("device-row")
+        main_area.pack_start(device_row, False, False, 0)
+        self.network_label = self.chip("CONEXÃO DE REDE: --")
+        self.controller_label = self.chip("CONTROLADOR: --")
+        self.bluetooth_label = self.chip("BLUETOOTH: --")
+        for chip in (self.network_label, self.controller_label, self.bluetooth_label):
+            device_row.pack_start(chip, False, False, 0)
 
         self.stack = Gtk.Stack()
         self.stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
-        self.stack.set_transition_duration(120)
-        body.pack_start(self.stack, True, True, 0)
+        self.stack.set_transition_duration(110)
+        main_area.pack_start(self.stack, True, True, 0)
 
-        self.stack.add_named(self.build_library_page(), "library")
-        self.stack.add_named(self.build_emulators_page(), "emulators")
-        self.stack.add_named(self.build_browser_page(), "browser")
-        self.stack.add_named(self.build_steam_page(), "steam")
-        self.stack.add_named(self.build_settings_page(), "settings")
-        self.stack.add_named(self.build_about_page(), "about")
+        self.stack.add_named(self.build_page("library", self.build_library_page), "library")
+        self.stack.add_named(self.build_page("emulators", self.build_emulators_page), "emulators")
+        self.stack.add_named(self.build_page("browser", self.build_browser_page), "browser")
+        self.stack.add_named(self.build_page("steam", self.build_steam_page), "steam")
+        self.stack.add_named(self.build_page("settings", self.build_settings_page), "settings")
+        self.stack.add_named(self.build_page("about", self.build_about_page), "about")
         self.switch_page("library")
 
-        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
+        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=18)
         footer.get_style_context().add_class("footer")
         root.pack_end(footer, False, False, 0)
-        foot = Gtk.Label()
-        foot.set_markup(
-            '<span foreground="#ff6678" weight="bold">ENTER</span><span> SELECIONAR</span>'
-            '    <span foreground="#ff6678" weight="bold">ESC</span><span> VOLTAR</span>'
-            '    <span foreground="#ff6678" weight="bold">Y</span><span> PESQUISAR</span>'
-            '    <span foreground="#ff6678" weight="bold">F10</span><span> MENU</span>'
-            '    <span foreground="#ff6678" weight="bold">F11</span><span> TELA CHEIA</span>'
+        hints = Gtk.Label()
+        hints.set_markup(
+            '<span foreground="#4ecb78" weight="bold">A</span><span> SELECIONAR</span>'
+            '    <span foreground="#f04d62" weight="bold">B</span><span> VOLTAR</span>'
+            '    <span foreground="#57a9e9" weight="bold">X</span><span> DETALHES</span>'
+            '    <span foreground="#f2d34d" weight="bold">Y</span><span> PESQUISAR</span>'
+            '    <span weight="bold">START</span><span> MENU DE SISTEMA</span>'
         )
-        foot.get_style_context().add_class("footer-text")
-        footer.pack_start(foot, False, False, 0)
+        hints.get_style_context().add_class("footer-text")
+        footer.pack_end(hints, False, False, 8)
+
+    def status_label(self, text):
+        label = Gtk.Label(label=text)
+        label.get_style_context().add_class("top-status")
+        return label
+
+    def clock_label_widget(self):
+        self.clock_label = Gtk.Label(label="--:--")
+        self.clock_label.get_style_context().add_class("clock")
+        return self.clock_label
+
+    def chip(self, text):
+        label = Gtk.Label(label=text)
+        label.get_style_context().add_class("device-chip")
+        return label
 
     def make_page(self):
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=13)
-        page.set_margin_start(27)
-        page.set_margin_end(27)
-        page.set_margin_top(22)
-        page.set_margin_bottom(26)
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        page.set_margin_start(9)
+        page.set_margin_end(9)
+        page.set_margin_top(10)
+        page.set_margin_bottom(20)
         page.get_style_context().add_class("content")
         scroll.add(page)
         return scroll, page
@@ -278,7 +439,7 @@ class VulkanDashboard(Gtk.Window):
         heading = Gtk.Label(label=title)
         heading.set_xalign(0)
         heading.get_style_context().add_class("page-title")
-        page.pack_start(heading, False, False, 3)
+        page.pack_start(heading, False, False, 0)
         if subtitle:
             sub = Gtk.Label(label=subtitle)
             sub.set_xalign(0)
@@ -287,34 +448,39 @@ class VulkanDashboard(Gtk.Window):
 
     def make_tile(self, title, subtitle, icon, callback, color="tile-red", image_path=None):
         button = Gtk.Button()
-        button.set_size_request(205, 132)
+        button.set_size_request(-1, 155)
+        button.set_hexpand(True)
+        button.set_halign(Gtk.Align.FILL)
         button.set_relief(Gtk.ReliefStyle.NONE)
         button.set_tooltip_text(title + " — " + subtitle)
         context = button.get_style_context()
         context.add_class("tile")
         context.add_class(color)
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
-        image = None
-        if image_path:
-            try:
-                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(image_path), 180, 74, True)
-                image = Gtk.Image.new_from_pixbuf(pixbuf)
-            except GLib.Error:
-                image = None
-        if image is None:
-            image = Gtk.Image.new_from_icon_name(icon, Gtk.IconSize.DIALOG)
-            image.set_pixel_size(38)
-        image.get_style_context().add_class("tile-icon")
-        label = Gtk.Label(label=title)
-        label.set_xalign(0)
-        label.get_style_context().add_class("tile-title")
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        art = image_from(image_path, icon)
+        art.set_hexpand(True)
+        art.set_vexpand(True)
+        art.set_halign(Gtk.Align.FILL)
+        art.set_valign(Gtk.Align.FILL)
+        art.set_size_request(-1, 108)
+        art.get_style_context().add_class("tile-art")
+        box.pack_start(art, True, True, 0)
+
+        caption = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        caption.get_style_context().add_class("tile-caption")
+        name = Gtk.Label(label=title)
+        name.set_xalign(0)
+        name.set_ellipsize(3)
+        name.get_style_context().add_class("tile-title")
         detail = Gtk.Label(label=subtitle)
-        detail.set_xalign(0)
-        detail.set_line_wrap(True)
+        detail.set_xalign(1)
+        detail.set_ellipsize(3)
         detail.get_style_context().add_class("tile-subtitle")
-        box.pack_start(image, True, True, 0)
-        box.pack_start(label, False, False, 0)
-        box.pack_start(detail, False, False, 0)
+        caption.pack_start(name, True, True, 0)
+        caption.pack_end(detail, False, False, 0)
+        box.pack_end(caption, False, False, 0)
+
         button.add(box)
         button.connect("clicked", lambda *_: callback())
         return button
@@ -325,11 +491,15 @@ class VulkanDashboard(Gtk.Window):
         heading.get_style_context().add_class("section-title")
         page.pack_start(heading, False, False, 0)
         grid = Gtk.Grid()
-        grid.set_column_spacing(13)
-        grid.set_row_spacing(13)
+        grid.set_column_spacing(15)
+        grid.set_row_spacing(14)
         grid.set_column_homogeneous(True)
+        grid.set_hexpand(True)
+        page_buttons = self.page_tiles.setdefault(self._building_page, [])
         for index, card in enumerate(cards):
-            grid.attach(self.make_tile(*card), index % 3, index // 3, 1, 1)
+            button = self.make_tile(*card)
+            grid.attach(button, index % 3, index // 3, 1, 1)
+            page_buttons.append(button)
         if cards:
             page.pack_start(grid, False, False, 0)
         if note:
@@ -338,75 +508,95 @@ class VulkanDashboard(Gtk.Window):
             label.get_style_context().add_class("muted")
             page.pack_start(label, False, False, 0)
 
+    def build_page(self, key, builder):
+        self._building_page = key
+        result = builder()
+        self._building_page = None
+        self.page_tiles.setdefault(key, [])
+        return result
+
+    def open_system_folder(self, folder):
+        files = roms_in(folder, 1)
+        if files:
+            launch_rom(files[0])
+        else:
+            open_folder(ROM_ROOT / folder)
+
     def build_library_page(self):
         scroll, page = self.make_page()
-        self.add_heading(page, "BIBLIOTECA", "Seus jogos e aplicativos em um só lugar")
+        self.add_heading(page, "BIBLIOTECA")
         games = steam_games()
         game_cards = []
-        for index, (name, appid) in enumerate(games[:6]):
-            colors = ["tile-red", "tile-blue", "tile-purple", "tile-gold", "tile-green"]
+        for name, appid in games[:3]:
             game_cards.append((
-                name, "Steam • instalado", "applications-games",
-                lambda appid=appid: run_process(["steam", "-applaunch", appid]),
-                colors[index % len(colors)], steam_cover(appid)
+                name, "Steam", "applications-games",
+                lambda appid=appid: launch(["steam", "-applaunch", appid]),
+                "tile-red", steam_cover(appid)
             ))
         if not game_cards:
             game_cards.append((
-                "STEAM", "Abrir sua biblioteca de jogos", "steam",
-                lambda: run_process(["steam", "-gamepadui"]), "tile-blue"
+                "STEAM", "Abrir biblioteca de jogos", "applications-games",
+                lambda: launch(["steam", "-gamepadui"]), "tile-blue", None
             ))
         self.add_section(page, "JOGOS INSTALADOS", game_cards,
-                         "Os jogos aparecem aqui depois de instalados no Steam.")
+                         "Os jogos aparecem aqui depois de instalados na Steam.")
+
         favorites = [
-            ("RETROARCH", "Emuladores e cores", "applications-games",
-             lambda: run_process(["retroarch"]), "tile-purple"),
-            ("ES-DE", "Biblioteca de ROMs", "folder-games",
-             lambda: run_process(["/usr/local/bin/vulkanos-library"]), "tile-red"),
-            ("HYDRA", "Launcher de jogos", "applications-internet",
-             lambda: self.launch_hydra(), "tile-gold"),
-            ("NAVEGADOR", "Firefox ESR", "web-browser",
-             lambda: run_process(["firefox-esr"]), "tile-blue"),
+            ("SUPER NINTENDO", "SNES • " + str(count_roms("snes")) + " jogos",
+             "applications-games", lambda: self.open_system_folder("snes"),
+             "tile-blue", card_art("snes.svg")),
+            ("MEGA DRIVE", "SEGA • " + str(count_roms("megadrive")) + " jogos",
+             "applications-games", lambda: self.open_system_folder("megadrive"),
+             "tile-purple", card_art("megadrive.svg")),
+            ("RETROARCH", "Pronto para jogar", "applications-games",
+             lambda: launch(["retroarch"]), "tile-red", card_art("retroarch.svg")),
         ]
         self.add_section(page, "FAVORITOS", favorites)
-        roms = recent_roms(3)
+
+        recents = roms_in(limit=3)
         recent_cards = [
-            (path.stem, "ROM • " + path.parent.name, "applications-games",
-             lambda path=path: launch_rom(path), "tile-green")
-            for path in roms
+            (path.stem, "ROM • " + rom_system(path).upper(), "applications-games",
+             lambda path=path: launch_rom(path), "tile-green", None)
+            for path in recents
         ]
         if not recent_cards:
-            recent_cards = [(
-                "ADICIONE JOGOS", "Copie seus arquivos para ~/ROMs", "folder",
-                lambda: open_folder(ROM_ROOT), "tile-green"
-            )]
+            recent_cards = [
+                ("ADICIONE JOGOS", "Copie ROMs para ~/ROMs", "folder",
+                 lambda: open_folder(ROM_ROOT), "tile-green", None)
+            ]
         self.add_section(page, "RECENTES", recent_cards)
         return scroll
 
     def build_emulators_page(self):
         scroll, page = self.make_page()
-        self.add_heading(page, "EMULADORES", "Abra sua coleção ou gerencie os sistemas")
-        cards = [
-            ("RETROARCH", "Abrir o RetroArch", "applications-games",
-             lambda: run_process(["retroarch"]), "tile-purple"),
-            ("ES-DE", "Interface de biblioteca", "folder-games",
-             lambda: run_process(["/usr/local/bin/vulkanos-library"]), "tile-red"),
-        ]
+        self.add_heading(page, "EMULADORES", "Sua coleção de jogos clássicos")
         systems = [
-            ("NES", "Nintendo Entertainment System", "nes"),
-            ("SNES", "Super Nintendo", "snes"),
-            ("GAME BOY", "Game Boy", "gb"),
-            ("GAME BOY COLOR", "Game Boy Color", "gbc"),
-            ("GAME BOY ADVANCE", "Game Boy Advance", "gba"),
-            ("MEGA DRIVE", "Sega Mega Drive", "megadrive"),
+            ("NES", "nes", "Nintendo Entertainment System"),
+            ("SNES", "snes", "Super Nintendo"),
+            ("GAME BOY", "gb", "Game Boy"),
+            ("GAME BOY COLOR", "gbc", "Game Boy Color"),
+            ("GAME BOY ADVANCE", "gba", "Game Boy Advance"),
+            ("MEGA DRIVE", "megadrive", "Sega Mega Drive"),
         ]
-        for label, detail, folder in systems:
-            count = sum(1 for _ in (ROM_ROOT / folder).glob("*") if _.is_file()) if (ROM_ROOT / folder).exists() else 0
+        cards = []
+        for label, folder, detail in systems:
             cards.append((
-                label, detail + " • " + str(count) + " arquivo(s)", "applications-games",
-                lambda folder=folder: open_folder(ROM_ROOT / folder), "tile-blue"
+                label, detail + " • " + str(count_roms(folder)) + " jogos",
+                "applications-games",
+                lambda folder=folder: self.open_system_folder(folder),
+                "tile-blue", card_art(folder + ".svg")
             ))
+        cards.append((
+            "RETROARCH", "Abrir emuladores e cores", "applications-games",
+            lambda: launch(["retroarch"]), "tile-red", card_art("retroarch.svg")
+        ))
+        cards.append((
+            "ES-DE", "Biblioteca visual", "folder-games",
+            lambda: launch(["/usr/local/bin/vulkanos-library"]),
+            "tile-purple", None
+        ))
         self.add_section(page, "SISTEMAS", cards,
-                         "Coloque seus jogos nas pastas de ~/ROMs. Nenhum jogo ou BIOS é incluído.")
+                         "Adicione jogos às pastas de ~/ROMs. A ISO não inclui ROMs nem BIOS.")
         return scroll
 
     def build_browser_page(self):
@@ -414,9 +604,9 @@ class VulkanDashboard(Gtk.Window):
         self.add_heading(page, "NAVEGADOR", "Internet e serviços online")
         cards = [
             ("FIREFOX ESR", "Abrir navegador", "web-browser",
-             lambda: run_process(["firefox-esr"]), "tile-blue"),
-            ("REDE", "Configurar conexões", "network-wireless",
-             lambda: run_process(["nm-connection-editor"]), "tile-green"),
+             lambda: launch(["firefox-esr"]), "tile-blue", None),
+            ("REDE", "Wi-Fi e Ethernet", "network-wireless",
+             lambda: launch(["nm-connection-editor"]), "tile-green", None),
         ]
         self.add_section(page, "APLICATIVOS", cards)
         return scroll
@@ -425,16 +615,17 @@ class VulkanDashboard(Gtk.Window):
         scroll, page = self.make_page()
         self.add_heading(page, "STEAM", "Sua biblioteca de jogos para PC")
         cards = [
-            ("ABRIR STEAM", "Iniciar no modo de controle", "steam",
-             lambda: run_process(["steam", "-gamepadui"]), "tile-blue"),
-            ("MODO DESKTOP", "Abrir o cliente Steam normal", "applications-games",
-             lambda: run_process(["steam"]), "tile-red"),
+            ("ABRIR STEAM", "Modo de controle", "applications-games",
+             lambda: launch(["steam", "-gamepadui"]), "tile-blue", None),
+            ("MODO DESKTOP", "Cliente Steam normal", "applications-games",
+             lambda: launch(["steam"]), "tile-red", None),
         ]
         self.add_section(page, "CLIENTE", cards)
         games = steam_games()
         game_cards = [
             (name, "Steam • instalado", "applications-games",
-             lambda appid=appid: run_process(["steam", "-applaunch", appid]), "tile-purple", steam_cover(appid))
+             lambda appid=appid: launch(["steam", "-applaunch", appid]),
+             "tile-purple", steam_cover(appid))
             for name, appid in games[:12]
         ]
         self.add_section(page, "JOGOS INSTALADOS", game_cards,
@@ -445,18 +636,18 @@ class VulkanDashboard(Gtk.Window):
         scroll, page = self.make_page()
         self.add_heading(page, "CONFIGURAÇÕES", "Ajuste o sistema e seus dispositivos")
         cards = [
-            ("SISTEMA", "Configurações do XFCE", "preferences-system",
-             lambda: run_process(["xfce4-settings-manager"]), "tile-red"),
+            ("SISTEMA", "Configurações XFCE", "preferences-system",
+             lambda: launch(["xfce4-settings-manager"]), "tile-red", None),
             ("CONTROLES", "Mapeamento manual", "input-gaming",
-             lambda: run_process(["antimicro"]), "tile-purple"),
+             lambda: launch(["antimicro"]), "tile-purple", None),
             ("BLUETOOTH", "Parear dispositivos", "bluetooth",
-             lambda: run_process(["blueman-manager"]), "tile-blue"),
+             lambda: launch(["blueman-manager"]), "tile-blue", None),
             ("ÁUDIO", "Volume e dispositivos", "audio-volume-high",
-             lambda: run_process(["pavucontrol"]), "tile-gold"),
+             lambda: launch(["pavucontrol"]), "tile-gold", None),
             ("ARQUIVOS", "Abrir pasta de jogos", "folder",
-             lambda: open_folder(ROM_ROOT), "tile-green"),
+             lambda: open_folder(ROM_ROOT), "tile-green", None),
             ("REDE", "Wi-Fi e Ethernet", "network-wired",
-             lambda: run_process(["nm-connection-editor"]), "tile-blue"),
+             lambda: launch(["nm-connection-editor"]), "tile-blue", None),
         ]
         self.add_section(page, "SISTEMA", cards)
         return scroll
@@ -464,28 +655,26 @@ class VulkanDashboard(Gtk.Window):
     def build_about_page(self):
         scroll, page = self.make_page()
         self.add_heading(page, "SOBRE O VULKANOS", "PC Edition • Alpha")
-        text = Gtk.Label()
-        text.set_xalign(0)
-        text.set_line_wrap(True)
-        text.set_markup(
+        label = Gtk.Label()
+        label.set_xalign(0)
+        label.set_line_wrap(True)
+        label.set_markup(
             "<b>VulkanOS PC Alpha</b>\n\n"
             "Uma experiência Linux focada em jogos, com interface de console e ambiente desktop XFCE.\n\n"
-            "<b>Inclui:</b> Steam, RetroArch, ES-DE, Hydra Launcher, Firefox ESR, AntiMicroX e suporte Mesa/Vulkan.\n\n"
-            "<b>Estado:</b> esta interface é experimental. A detecção visual de dispositivos usa o estado reportado pelo Linux; "
-            "o funcionamento de cada controle, GPU e jogo ainda depende de testes no hardware."
+            "<b>Inclui:</b> Steam, RetroArch, ES-DE, Hydra Launcher, Firefox ESR, AntiMicro e suporte Mesa/Vulkan.\n\n"
+            "<b>Estado:</b> interface experimental. A navegação por controle usa a interface joystick do Linux "
+            "quando o dispositivo está disponível; compatibilidade ainda depende do hardware."
         )
-        text.get_style_context().add_class("muted")
-        page.pack_start(text, False, False, 8)
+        label.get_style_context().add_class("muted")
+        page.pack_start(label, False, False, 8)
         return scroll
 
-    def launch_hydra(self):
-        if not launch_desktop_app("hydra"):
-            if not run_process(["hydra"]):
-                show_message(self, "Hydra Launcher", "O atalho do Hydra não foi encontrado nesta instalação.")
-
     def switch_page(self, name):
+        if name not in self.page_names:
+            return
+        self.active_page = name
         self.stack.set_visible_child_name(name)
-        for key, button in self.page_buttons.items():
+        for key, button in self.nav_buttons.items():
             context = button.get_style_context()
             if key == name:
                 context.add_class("active")
@@ -493,27 +682,45 @@ class VulkanDashboard(Gtk.Window):
                 context.remove_class("active")
 
     def refresh_status(self):
-        wifi_text = "SEM REDE"
+        network_text = "SEM REDE"
+        wifi_text = "WI-FI DESCONECTADO"
         try:
             result = subprocess.run(
                 ["nmcli", "-t", "-f", "TYPE,STATE", "device"],
                 capture_output=True, text=True, timeout=2
             )
-            lines = result.stdout.lower().splitlines()
-            if any("wifi:connected" in line or "802-11-wireless:connected" in line for line in lines):
-                wifi_text = "WIFI CONECTADO"
-            elif any(("ethernet:connected" in line or "802-3-ethernet:connected" in line) for line in lines):
-                wifi_text = "REDE CABO"
+            lines = [line.lower() for line in result.stdout.splitlines()]
+            if any(line.startswith(("wifi:connected", "802-11-wireless:connected")) for line in lines):
+                network_text = "WI-FI CONECTADO"
+                wifi_text = "WI-FI CONECTADO"
+            elif any(line.startswith(("ethernet:connected", "802-3-ethernet:connected")) for line in lines):
+                network_text = "CABO CONECTADO"
+                wifi_text = "REDE CONECTADA"
         except (OSError, subprocess.TimeoutExpired):
             pass
-        controllers = glob.glob("/dev/input/js*")
-        controller_text = "CONTROLE DETECTADO" if controllers else "SEM CONTROLE"
+
+        devices = sorted(glob.glob("/sys/class/input/js*/device/name"))
+        if devices:
+            try:
+                self.controller_name = Path(devices[0]).read_text(
+                    encoding="utf-8", errors="ignore"
+                ).strip()
+            except OSError:
+                self.controller_name = "GAMEPAD"
+            controller_text = "CONECTADO (" + self.controller_name[:22] + ")"
+        else:
+            self.controller_name = ""
+            controller_text = "NÃO CONECTADO"
+
         try:
-            result = subprocess.run(["systemctl", "is-active", "bluetooth"],
-                                    capture_output=True, text=True, timeout=2)
-            bt_text = "BLUETOOTH ATIVO" if result.stdout.strip() == "active" else "BLUETOOTH INATIVO"
+            result = subprocess.run(
+                ["systemctl", "is-active", "bluetooth"],
+                capture_output=True, text=True, timeout=2
+            )
+            bt_text = "ATIVO" if result.stdout.strip() == "active" else "INATIVO"
         except (OSError, subprocess.TimeoutExpired):
-            bt_text = "BLUETOOTH --"
+            bt_text = "--"
+
         batteries = glob.glob("/sys/class/power_supply/BAT*/capacity")
         battery_text = "--"
         if batteries:
@@ -521,10 +728,12 @@ class VulkanDashboard(Gtk.Window):
                 battery_text = Path(batteries[0]).read_text().strip() + "%"
             except OSError:
                 pass
-        self.wifi_label.set_text(wifi_text)
-        self.controller_label.set_text(controller_text)
-        self.bluetooth_label.set_text(bt_text)
-        self.bateria_label.set_text("BATERIA " + battery_text)
+
+        self.network_label.set_text("CONEXÃO DE REDE: " + network_text)
+        self.controller_label.set_text("CONTROLADOR: " + controller_text)
+        self.bluetooth_label.set_text("BLUETOOTH: " + bt_text)
+        self.wifi_label.set_text("◉  " + wifi_text)
+        self.battery_label.set_text("▰  " + battery_text)
         return True
 
     def update_clock(self):
@@ -532,9 +741,68 @@ class VulkanDashboard(Gtk.Window):
         self.clock_label.set_text(datetime.now().strftime("%H:%M"))
         return True
 
+    def focus_nav(self):
+        button = self.nav_buttons.get(self.active_page)
+        if button:
+            button.grab_focus()
+
+    def move_focus(self, direction):
+        focused = self.get_focus()
+        nav_items = list(self.nav_buttons.items())
+        focused_nav = next((key for key, button in nav_items if button == focused), None)
+        directions = {
+            "UP": Gtk.DirectionType.UP,
+            "DOWN": Gtk.DirectionType.DOWN,
+            "LEFT": Gtk.DirectionType.LEFT,
+            "RIGHT": Gtk.DirectionType.RIGHT,
+        }
+        if focused_nav is not None:
+            keys = [key for key, _ in nav_items]
+            index = keys.index(focused_nav)
+            if direction == "UP" and index > 0:
+                self.nav_buttons[keys[index - 1]].grab_focus()
+                return
+            if direction == "DOWN" and index < len(keys) - 1:
+                self.nav_buttons[keys[index + 1]].grab_focus()
+                return
+            if direction == "RIGHT":
+                tiles = self.page_tiles.get(self.active_page, [])
+                if tiles:
+                    tiles[0].grab_focus()
+                    return
+        elif direction == "LEFT":
+            self.focus_nav()
+            return
+        self.child_focus(directions[direction])
+
+    def focused_button(self):
+        widget = self.get_focus()
+        while widget is not None and not isinstance(widget, Gtk.Button):
+            widget = widget.get_parent()
+        return widget
+
+    def select_focused(self):
+        button = self.focused_button()
+        if button is not None:
+            button.clicked()
+        else:
+            tiles = self.page_tiles.get(self.active_page, [])
+            if tiles:
+                tiles[0].clicked()
+            else:
+                self.nav_buttons[self.active_page].clicked()
+
+    def show_details(self):
+        button = self.focused_button()
+        detail = button.get_tooltip_text() if button else "VulkanOS PC Alpha"
+        show_message(self, "DETALHES", detail or "VulkanOS PC Alpha")
+
     def show_search(self):
-        dialog = Gtk.Dialog(title="Pesquisar na biblioteca", transient_for=self, flags=Gtk.DialogFlags.MODAL)
-        dialog.add_button("FECHAR", Gtk.ResponseType.CANCEL)
+        dialog = Gtk.Dialog(
+            title="Pesquisar na biblioteca", transient_for=self,
+            flags=Gtk.DialogFlags.MODAL
+        )
+        dialog.add_button("VOLTAR", Gtk.ResponseType.CANCEL)
         dialog.add_button("PESQUISAR", Gtk.ResponseType.OK)
         entry = Gtk.Entry()
         entry.set_placeholder_text("Digite o nome de um jogo ou ROM...")
@@ -547,53 +815,151 @@ class VulkanDashboard(Gtk.Window):
             query = entry.get_text().strip().lower()
             if query:
                 matches = [name for name, _ in steam_games() if query in name.lower()]
-                matches += [path.name for path in recent_roms(100) if query in path.name.lower()]
-                text = "\n".join(matches[:15]) if matches else "Nenhum resultado encontrado."
-                show_message(self, "Resultados da pesquisa", text)
+                matches += [path.name for path in roms_in(limit=300) if query in path.name.lower()]
+                result = "\n".join(matches[:20]) if matches else "Nenhum resultado encontrado."
+                show_message(self, "RESULTADOS", result)
         dialog.destroy()
 
     def show_system_menu(self):
         dialog = Gtk.MessageDialog(
             transient_for=self, flags=Gtk.DialogFlags.MODAL,
             message_type=Gtk.MessageType.QUESTION, buttons=Gtk.ButtonsType.NONE,
-            text="Menu do VulkanOS"
+            text="MENU DE SISTEMA"
         )
-        dialog.format_secondary_text("Fechar o dashboard para voltar à área de trabalho XFCE?")
+        dialog.format_secondary_text(
+            "Voltar para o desktop XFCE ou continuar na interface VulkanOS?"
+        )
         dialog.add_button("CONTINUAR", Gtk.ResponseType.CANCEL)
-        dialog.add_button("ÁREA DE TRABALHO", Gtk.ResponseType.OK)
+        dialog.add_button("DESKTOP XFCE", Gtk.ResponseType.OK)
         response = dialog.run()
         dialog.destroy()
         if response == Gtk.ResponseType.OK:
-            self.destroy()
+            self.close_dashboard()
+
+    def close_dashboard(self):
+        self.destroy()
+
+    def minimize_window(self):
+        Gtk.Window.iconify(self)
+
+    def on_destroy(self, *_args):
+        if Gtk.main_level() > 0:
+            Gtk.main_quit()
+
+    def toggle_fullscreen(self):
+        if self.is_fullscreen:
+            self.unfullscreen()
+        else:
+            self.fullscreen()
+        self.is_fullscreen = not self.is_fullscreen
 
     def on_key(self, _widget, event):
         key = Gdk.keyval_name(event.keyval)
-        if key == "F11":
-            if self.is_fullscreen:
-                self.unfullscreen()
-                self.is_fullscreen = False
-            else:
-                self.fullscreen()
-                self.is_fullscreen = True
+        if key in ("Return", "KP_Enter", "space"):
+            self.select_focused()
+            return True
+        if key == "Escape":
+            if self.active_page != "library":
+                self.switch_page("library")
+                self.focus_nav()
+            return True
+        if key in ("Left", "Right", "Up", "Down"):
+            self.move_focus(key.upper())
+            return True
+        if key.lower() == "x":
+            self.show_details()
+            return True
+        if key.lower() == "y":
+            self.show_search()
             return True
         if key == "F10":
             self.show_system_menu()
             return True
-        if key in ("y", "Y"):
-            self.show_search()
+        if key == "F11":
+            self.toggle_fullscreen()
             return True
-        if key == "Escape":
-            if self.stack.get_visible_child_name() != "library":
-                self.switch_page("library")
-                return True
         return False
 
+    def perform_gamepad_button(self, number):
+        if number == 0:
+            self.select_focused()
+        elif number == 1:
+            if self.active_page != "library":
+                self.switch_page("library")
+                self.focus_nav()
+        elif number == 2:
+            self.show_details()
+        elif number == 3:
+            self.show_search()
+        elif number == 9:
+            self.show_system_menu()
+
+    def poll_controller(self):
+        if self.controller_fd is None:
+            candidates = sorted(glob.glob("/dev/input/js*"))
+            if candidates:
+                try:
+                    self.controller_path = candidates[0]
+                    self.controller_fd = os.open(
+                        self.controller_path, os.O_RDONLY | os.O_NONBLOCK
+                    )
+                except OSError:
+                    self.controller_fd = None
+
+        if self.controller_fd is not None:
+            try:
+                while True:
+                    raw = os.read(self.controller_fd, 8)
+                    if len(raw) != 8:
+                        break
+                    _timestamp, value, event_type, number = struct.unpack("IhBB", raw)
+                    event_type &= 0x7F
+                    if event_type == 0x02 and number in (0, 1):
+                        old = self.axis_values[number]
+                        self.axis_values[number] = value
+                        threshold = 18000
+                        if abs(old) < threshold <= abs(value):
+                            if number == 0:
+                                self.move_focus("RIGHT" if value > 0 else "LEFT")
+                            else:
+                                self.move_focus("DOWN" if value > 0 else "UP")
+                    elif event_type == 0x01 and value == 1:
+                        self.perform_gamepad_button(number)
+            except BlockingIOError:
+                pass
+            except OSError:
+                try:
+                    os.close(self.controller_fd)
+                except OSError:
+                    pass
+                self.controller_fd = None
+                self.controller_path = None
+        return True
+
+    def run_smoke_test(self):
+        for page in self.page_names:
+            self.switch_page(page)
+        self.switch_page("library")
+        self.show_all()
+        self.fullscreen()
+        GLib.timeout_add(450, Gtk.main_quit)
+
 def main():
-    app = VulkanDashboard()
-    app.is_fullscreen = True
-    app.show_all()
-    app.fullscreen()
+    smoke_test = "--smoke-test" in sys.argv
+    window = VulkanDashboard()
+    window.show_all()
+    if smoke_test:
+        window.run_smoke_test()
+        Gtk.main()
+        window.destroy()
+        return 0
+    window.is_fullscreen = True
+    window.fullscreen()
+    window.focus_nav()
     Gtk.main()
+    return 0
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
+
+[executed on device: SnyX-PC (cde0589c-0418-41c7-a0c5-371e66fb4eb6)]
