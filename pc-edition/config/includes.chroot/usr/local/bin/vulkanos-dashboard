@@ -153,8 +153,9 @@ def steam_cover(appid):
     return None
 
 ROM_EXTENSIONS = {
-    ".nes", ".smc", ".sfc", ".gb", ".gbc", ".gba",
-    ".gen", ".md", ".sms", ".gg", ".zip", ".7z"
+    ".nes", ".unf", ".unif", ".fds", ".smc", ".sfc", ".swc",
+    ".gb", ".gbc", ".gba", ".gen", ".md", ".smd", ".32x",
+    ".bin", ".sms", ".gg", ".zip", ".7z"
 }
 
 def roms_in(folder=None, limit=None):
@@ -182,27 +183,12 @@ def rom_system(path):
         return path.parent.name.lower()
 
 def launch_rom(path):
-    system = rom_system(path)
-    cores = {
-        "nes": ["nestopia_libretro.so", "fceumm_libretro.so"],
-        "snes": ["snes9x_libretro.so"],
-        "gb": ["gambatte_libretro.so"],
-        "gbc": ["gambatte_libretro.so"],
-        "gba": ["mgba_libretro.so"],
-        "megadrive": ["genesis_plus_gx_libretro.so"],
-    }
-    core_dirs = [
-        Path("/usr/lib/x86_64-linux-gnu/libretro"),
-        Path("/usr/lib/libretro"),
-        Path("/usr/lib/x86_64-linux-gnu/retroarch/cores"),
-    ]
-    for candidate in cores.get(system, []):
-        for folder in core_dirs:
-            core = folder / candidate
-            if core.exists() and launch(["retroarch", "-L", str(core), str(path)]):
-                return
-    if not launch(["/usr/local/bin/vulkanos-library"]):
-        show_message(None, "Biblioteca", "Não foi possível abrir o ES-DE. Verifique a instalação.")
+    if not launch(["/usr/local/bin/vulkanos-game-runtime", "launch", str(path)]):
+        show_message(
+            None, "VulkanOS Game Runtime",
+            "Não foi possível iniciar este jogo. Confira se o core do sistema está instalado. "
+            "Abra a página EMULADORES ou execute vulkanos-game-runtime scan para verificar a biblioteca."
+        )
 
 def open_folder(path):
     Path(path).mkdir(parents=True, exist_ok=True)
@@ -595,7 +581,17 @@ class VulkanDashboard(Gtk.Window):
             lambda: launch(["/usr/local/bin/vulkanos-library"]),
             "tile-purple", None
         ))
-        self.add_section(page, "SISTEMAS", cards,
+        cards.append((
+            "CONTROLLER MANAGER", "Reconhecer, testar e mapear controles", "input-gaming",
+            lambda: launch(["/usr/local/bin/vulkanos-controller-manager"]),
+            "tile-green", None
+        ))
+        cards.append((
+            "PERFORMANCE", "GameMode, MangoHud e Vulkan", "utilities-system-monitor",
+            lambda: launch(["/usr/local/bin/vulkanos-performance"]),
+            "tile-red", None
+        ))
+        self.add_section(page, "SISTEMAS E FERRAMENTAS", cards,
                          "Adicione jogos às pastas de ~/ROMs. A ISO não inclui ROMs nem BIOS.")
         return scroll
 
@@ -638,8 +634,10 @@ class VulkanDashboard(Gtk.Window):
         cards = [
             ("SISTEMA", "Configurações XFCE", "preferences-system",
              lambda: launch(["xfce4-settings-manager"]), "tile-red", None),
-            ("CONTROLES", "Mapeamento manual", "input-gaming",
-             lambda: launch(["antimicro"]), "tile-purple", None),
+            ("CONTROLES", "Gerenciador de controles VulkanOS", "input-gaming",
+             lambda: launch(["/usr/local/bin/vulkanos-controller-manager"]), "tile-purple", None),
+            ("DESEMPENHO", "GameMode, MangoHud e Vulkan", "utilities-system-monitor",
+             lambda: launch(["/usr/local/bin/vulkanos-performance"]), "tile-red", None),
             ("BLUETOOTH", "Parear dispositivos", "bluetooth",
              lambda: launch(["blueman-manager"]), "tile-blue", None),
             ("ÁUDIO", "Volume e dispositivos", "audio-volume-high",
