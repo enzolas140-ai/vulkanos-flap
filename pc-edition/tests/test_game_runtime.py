@@ -1,10 +1,12 @@
+import importlib.machinery
 import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
 
 SCRIPT=Path(__file__).resolve().parents[1]/"config/includes.chroot/usr/local/bin/vulkanos-game-runtime"
-SPEC=importlib.util.spec_from_file_location("vulkanos_game_runtime",SCRIPT)
+LOADER=importlib.machinery.SourceFileLoader("vulkanos_game_runtime",str(SCRIPT))
+SPEC=importlib.util.spec_from_loader("vulkanos_game_runtime",LOADER)
 runtime=importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(runtime)
 
 class GameRuntimeTests(unittest.TestCase):
