@@ -29,13 +29,17 @@ jobs:
               set -eux
               apt-get update
               apt-get install -y --no-install-recommends \
-                bash ca-certificates curl python3 \
+                bash ca-certificates curl python3 python3-gi gir1.2-gtk-3.0 \
+                gir1.2-gdkpixbuf-2.0 librsvg2-common xvfb xauth \
                 live-build debootstrap \
                 xorriso squashfs-tools \
                 syslinux-common syslinux-utils isolinux \
                 grub-pc-bin grub-efi-amd64-bin grub-efi-ia32-bin \
                 dosfstools mtools e2fsprogs \
                 xz-utils bzip2 rsync file gnupg
+              VULKANOS_RESOURCE_DIR="$PWD/config/includes.chroot/usr/share/backgrounds/vulkanos" \\
+                xvfb-run -a /usr/bin/python3 \\
+                "$PWD/config/includes.chroot/usr/local/bin/vulkanos-dashboard" --smoke-test
               bash ./build.sh
             '
 
