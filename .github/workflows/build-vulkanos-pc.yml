@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
 
+# A push supersedes an older ISO build for the same branch.
+concurrency:
+  group: vulkanos-pc-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-iso:
     runs-on: ubuntu-24.04
