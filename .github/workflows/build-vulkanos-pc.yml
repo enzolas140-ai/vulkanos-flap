@@ -42,7 +42,7 @@ jobs:
                 syslinux-common syslinux-utils isolinux \
                 grub-pc-bin grub-efi-amd64-bin grub-efi-ia32-bin \
                 dosfstools mtools e2fsprogs \
-                xz-utils bzip2 rsync file gnupg
+                xz-utils zstd bzip2 rsync file gnupg
               bash -n ./build.sh ./kernel/build-kernel.sh ./config/hooks/normal/*.hook.chroot
               PYTHONPYCACHEPREFIX=/tmp/vulkanos-pycache python3 -m py_compile \
                 "$PWD/config/includes.chroot/usr/local/bin/vulkanos-dashboard" \
