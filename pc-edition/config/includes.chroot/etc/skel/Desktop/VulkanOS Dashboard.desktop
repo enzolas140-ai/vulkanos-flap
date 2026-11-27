@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=VulkanOS Dashboard
+Comment=Open the VulkanOS console-style home screen
+Exec=/usr/local/bin/vulkanos-dashboard
+Icon=applications-games
+Terminal=false
+Categories=Game;Utility;

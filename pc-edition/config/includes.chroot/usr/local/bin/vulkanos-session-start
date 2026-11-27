@@ -9,3 +9,6 @@ if command -v xfconf-query >/dev/null 2>&1; then
   done
 fi
 mkdir -p "$HOME/Games/Downloads" "$HOME/Apps" "$HOME/Themes" "$HOME/ROMs"
+
+# Open the VulkanOS console-style dashboard as the main session interface.
+exec /usr/local/bin/vulkanos-dashboard
