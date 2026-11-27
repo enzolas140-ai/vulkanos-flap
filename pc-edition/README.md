@@ -15,7 +15,13 @@ A opção Live serve para experimentar o sistema sem instalar no disco. A opçã
 
 O dashboard traz as páginas Biblioteca, Emuladores, Navegador, Steam, Configurações e Sobre. A imagem inclui Firefox ESR, Steam, RetroArch e cores, ES-DE, Hydra Launcher, AntiMicro, Mesa/Vulkan, MangoHud, GameMode, Bluetooth, NetworkManager, PipeWire e ferramentas do sistema, conforme disponibilidade e compatibilidade dos pacotes.
 
-O dashboard abre os jogos e programas instalados. ES-DE continua sendo o frontend de emulação, e os jogos/ROMs devem ser adicionados pelo próprio usuário em `~/ROMs`. Nenhum jogo, ROM ou BIOS é distribuído.
+O **VulkanOS Game Runtime** examina `~/ROMs`, identifica sistemas e inicia os cores RetroArch instalados. A primeira seleção inclui NES, SNES, Game Boy, Game Boy Color, Game Boy Advance e Mega Drive. Os cores são pacotes Debian recompilados para Trixie; os binários Buildroot do Batocera não são copiados para o sistema.
+
+O **Game Center** apresenta jogos Steam, ROMs recentes e atalhos dos sistemas. O **Controller Manager** lista gamepads pela interface Linux evdev, salva metadados dos dispositivos e abre jstest-gtk para teste/calibração e AntiMicro para mapeamento manual de gamepad para teclado/mouse. O RetroArch usa a pilha SDL/udev para entrada direta; a compatibilidade depende do dispositivo e dos drivers.
+
+O **Performance Center** permite habilitar GameMode e MangoHud em ROMs iniciadas pelo runtime, executar diagnóstico Vulkan/OpenGL e abrir o controle de áudio. O Vulkan não é forçado em hardware ou emuladores incompatíveis. Os shaders são configurados no próprio RetroArch.
+
+Jogos/ROMs devem ser adicionados pelo próprio usuário em `~/ROMs`. Nenhum jogo, ROM ou BIOS é distribuído.
 
 ## Kernel e arquitetura
 
@@ -25,9 +31,22 @@ O kernel é uma compilação personalizada do Linux; não é um kernel escrito d
 
 O kernel personalizado não é assinado. Em computadores que exigem componentes de boot assinados, pode ser necessário desativar o Secure Boot no firmware.
 
+## Game Runtime, Game Center e Performance
+
+No terminal:
+
+```bash
+vulkanos-game-runtime init
+vulkanos-game-runtime scan
+vulkanos-game-runtime systems
+vulkanos-game-runtime launch ~/ROMs/nes/seu-jogo.nes
+```
+
+Configurações por usuário ficam em `~/.config/vulkanos/`. GameMode/MangoHud configurados pelo Performance Center afetam os jogos iniciados pelo runtime. Jogos Steam continuam usando o Steam e suas próprias configurações.
+
 ## Controles e periféricos
 
-Teclados e mouses USB/Bluetooth funcionam através da pilha normal de entrada Linux quando o hardware é reconhecido. Controles USB/Bluetooth que são reconhecidos pelo Linux podem ser usados nos aplicativos compatíveis. AntiMicro permite mapear manualmente botões e eixos para teclado/mouse; não é uma garantia de compatibilidade universal. O suporte real depende do controle, Bluetooth, driver e jogo.
+Teclados e mouses USB/Bluetooth funcionam através da pilha normal de entrada Linux quando o hardware é reconhecido. Controles USB/Bluetooth que são reconhecidos pelo Linux podem ser usados nos aplicativos compatíveis. AntiMicro permite mapear manualmente botões e eixos para teclado/mouse; não é uma garantia de compatibilidade universal. O suporte real depende do controle, Bluetooth, driver, SDL e jogo.
 
 ## Build
 

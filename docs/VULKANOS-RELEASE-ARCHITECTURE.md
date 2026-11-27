@@ -157,4 +157,8 @@ The existing VulkanOS custom evaluation license applies only to original VulkanO
 
 ## Current implementation state
 
-This document records the approved architecture. It does not claim that the Batocera runtime, all emulators, universal controller support or a stable RELEASE image have already been implemented. The current PC branch contains the earlier VulkanOS boot/dashboard/kernel work; Batocera integration will be developed and validated in the phases above.
+The PC development branch now includes a VulkanOS Game Runtime for scanning supported ROM directories and launching installed RetroArch cores; a first-wave Game Center using the existing VulkanOS Dashboard; a Controller Manager based on Linux evdev with jstest-gtk and AntiMicro tools; and a Performance Center that can apply GameMode/MangoHud to runtime-launched games and report Vulkan/OpenGL/audio diagnostics. Automated checks compile the Python tools, run runtime self-tests and unit tests, and perform the GTK dashboard smoke test before attempting the ISO.
+
+The first supported ROM set is NES, SNES, Game Boy, Game Boy Color, Game Boy Advance and Mega Drive. This uses Debian Trixie libretro packages and is an initial integration informed by Batocera's package and system definitions, not a wholesale import of Batocera or its Buildroot binaries.
+
+This does not claim that all emulators, every gamepad, all GPU vendors or a stable RELEASE image have been validated. The ISO build and physical-hardware tests remain separate acceptance gates.

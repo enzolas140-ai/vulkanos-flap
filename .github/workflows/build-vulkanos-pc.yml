@@ -29,7 +29,7 @@ jobs:
               set -eux
               apt-get update
               apt-get install -y --no-install-recommends \
-                bash ca-certificates curl python3 python3-gi python3-pil \
+                bash ca-certificates curl python3 python3-gi python3-pil python3-evdev \
                 gir1.2-gtk-3.0 gir1.2-gdkpixbuf-2.0 \
                 librsvg2-common librsvg2-bin xvfb xauth \
                 live-build debootstrap \
@@ -39,7 +39,14 @@ jobs:
                 dosfstools mtools e2fsprogs \
                 xz-utils bzip2 rsync file gnupg
               bash -n ./build.sh ./kernel/build-kernel.sh ./config/hooks/normal/*.hook.chroot
-              PYTHONPYCACHEPREFIX=/tmp/vulkanos-pycache python3 -m py_compile "$PWD/config/includes.chroot/usr/local/bin/vulkanos-dashboard"
+              PYTHONPYCACHEPREFIX=/tmp/vulkanos-pycache python3 -m py_compile \
+                "$PWD/config/includes.chroot/usr/local/bin/vulkanos-dashboard" \
+                "$PWD/config/includes.chroot/usr/local/bin/vulkanos-game-runtime" \
+                "$PWD/config/includes.chroot/usr/local/bin/vulkanos-controller-manager" \
+                "$PWD/config/includes.chroot/usr/local/bin/vulkanos-performance"
+              python3 "$PWD/config/includes.chroot/usr/local/bin/vulkanos-game-runtime" self-test
+              python3 "$PWD/config/includes.chroot/usr/local/bin/vulkanos-controller-manager" --self-test
+              python3 -m unittest discover -s tests -v
               python3 -c "import pathlib, xml.etree.ElementTree as ET; [ET.parse(p) for p in pathlib.Path(\".\").rglob(\"*.svg\")]; print(\"All VulkanOS SVG assets are valid\")"
               VULKANOS_RESOURCE_DIR="$PWD/config/includes.chroot/usr/share/backgrounds/vulkanos" \
               VULKANOS_SCREENSHOT_PATH="$PWD/dashboard-preview.png" \
@@ -153,7 +160,11 @@ jobs:
           ## Sistema
           - Kernel Linux x86-64 compilado em pacote Debian com configuração VulkanOS.
           - Dashboard fullscreen com Biblioteca, Emuladores, Navegador, Steam, Configurações e Sobre.
-          - Firefox ESR, Steam, RetroArch, ES-DE, Hydra Launcher, AntiMicro, Mesa/Vulkan, MangoHud e GameMode conforme disponibilidade dos pacotes.
+          - Game Runtime para varrer ROMs e lançar cores Debian/RetroArch: NES, SNES, GB, GBC, GBA e Mega Drive.
+          - Game Center integrado ao dashboard com jogos Steam e ROMs recentes.
+          - Controller Manager baseado em evdev, com jstest-gtk para teste/calibração e AntiMicro para mapeamento manual.
+          - Performance Center com GameMode, MangoHud e diagnóstico Vulkan/OpenGL/áudio.
+          - Firefox ESR, Steam, ES-DE, Hydra Launcher e pilha Mesa/Vulkan conforme disponibilidade dos pacotes.
           - Suporte a teclado, mouse e controles reconhecidos pelo Linux; AntiMicro permite mapeamento manual.
 
           ## Kernel e fontes
